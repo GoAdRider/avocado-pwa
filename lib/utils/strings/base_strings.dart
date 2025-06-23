@@ -20,6 +20,7 @@ class BaseStrings {
       'yes': '예',
       'no': '아니오',
       'ok': '확인',
+      'close': '닫기',
       'file_select': '파일 선택',
       'confirm_delete': '삭제 확인',
       'confirm_reset': '초기화 확인',
@@ -56,6 +57,7 @@ class BaseStrings {
       'yes': 'Yes',
       'no': 'No',
       'ok': 'OK',
+      'close': 'Close',
       'file_select': 'Select File',
       'confirm_delete': 'Confirm Delete',
       'confirm_reset': 'Confirm Reset',
@@ -117,6 +119,7 @@ class BaseStrings {
   static String get yes => get('yes');
   static String get no => get('no');
   static String get ok => get('ok');
+  static String get close => get('close');
   static String get fileSelect => get('file_select');
   static String get confirmDelete => get('confirm_delete');
   static String get confirmReset => get('confirm_reset');

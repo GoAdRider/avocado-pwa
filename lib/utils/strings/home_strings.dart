@@ -49,6 +49,10 @@ class HomeStrings {
       'pos_filter': '🔍 품사 필터',
       'type_filter': '🏷️ 어휘 타입 필터',
       'selected_filters': '📌 선택된 필터: ',
+      'filter_no_selection_guide': '{filterType}을(를) 보려면',
+      'filter_select_vocab_first': '먼저 어휘집을 선택해주세요',
+      'pos_not_available': '품사정보없음',
+      'type_not_available': '타입정보없음',
 
       // 학습 모드
       'target_voca': '📖 TargetVoca',
@@ -62,6 +66,9 @@ class HomeStrings {
       'wrong_word_study': '❌ 틀린단어',
 
       // 시간 표시
+      'just_now': '방금 전',
+      'seconds_ago': '{seconds}초 전',
+      'minutes_ago': '{minutes}분 전',
       'hours_ago': '{hours}시간 전',
       'days_ago': '{days}일 전',
       'weeks_ago': '{weeks}주 전',
@@ -244,6 +251,10 @@ class HomeStrings {
       'pos_filter': '🔍 POS Filter',
       'type_filter': '🏷️ Type Filter',
       'selected_filters': '📌 Selected Filters: ',
+      'filter_no_selection_guide': 'To see {filterType}',
+      'filter_select_vocab_first': 'Please select vocabulary first',
+      'pos_not_available': 'No POS Info',
+      'type_not_available': 'No Type Info',
 
       // 학습 모드
       'target_voca': '📖 TargetVoca',
@@ -257,6 +268,9 @@ class HomeStrings {
       'wrong_word_study': '❌ Wrong Words',
 
       // 시간 표시
+      'just_now': 'Just now',
+      'seconds_ago': '{seconds}s ago',
+      'minutes_ago': '{minutes}m ago',
       'hours_ago': '{hours}h ago',
       'days_ago': '{days}d ago',
       'weeks_ago': '{weeks}w ago',
@@ -485,6 +499,11 @@ class HomeStrings {
   static String get posFilter => get('pos_filter');
   static String get typeFilter => get('type_filter');
   static String get selectedFilters => get('selected_filters');
+  static String filterNoSelectionGuide(String filterType) =>
+      get('filter_no_selection_guide', params: {'filterType': filterType});
+  static String get filterSelectVocabFirst => get('filter_select_vocab_first');
+  static String get posNotAvailable => get('pos_not_available');
+  static String get typeNotAvailable => get('type_not_available');
 
   // 학습 모드
   static String get targetVoca => get('target_voca');
@@ -498,6 +517,11 @@ class HomeStrings {
   static String get wrongWordStudy => get('wrong_word_study');
 
   // 시간
+  static String get justNow => get('just_now');
+  static String secondsAgo(int seconds) =>
+      get('seconds_ago', params: {'seconds': seconds});
+  static String minutesAgo(int minutes) =>
+      get('minutes_ago', params: {'minutes': minutes});
   static String hoursAgo(int hours) =>
       get('hours_ago', params: {'hours': hours});
   static String daysAgo(int days) => get('days_ago', params: {'days': days});

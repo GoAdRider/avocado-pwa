@@ -4,7 +4,6 @@ import 'dart:js_interop';
 import 'dart:async';
 import '../services/hive_service.dart';
 import '../services/vocabulary_import_service.dart';
-import '../models/vocabulary_word.dart';
 import '../utils/strings/add_vocabulary_strings.dart';
 import '../utils/strings/base_strings.dart';
 
@@ -20,11 +19,10 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
   final VocabularyImportService _importService =
       VocabularyImportService.instance;
 
+  // UI 상태 관리
   bool _isDragOver = false;
   bool _isLoading = false;
   String _statusMessage = '';
-
-  // 파일 미리보기 상태
   List<VocabularyImportResult> _importResults = [];
   int _totalWords = 0;
   Timer? _statusMessageTimer;
@@ -41,18 +39,18 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     super.dispose();
   }
 
-  // 상태 메시지를 설정하고 자동으로 사라지게 하는 헬퍼 메서드
+  // ===== UI 헬퍼 메서드들 =====
+
+  /// 상태 메시지를 설정하고 자동으로 사라지게 하는 헬퍼 메서드
   void _setTemporaryStatusMessage(String message, {bool isError = false}) {
     setState(() {
       _statusMessage = message;
     });
 
-    // 기존 타이머 취소
     _statusMessageTimer?.cancel();
 
-    // 에러 메시지인 경우에만 자동으로 사라지게 함
     if (isError) {
-      _statusMessageTimer = Timer(const Duration(seconds: 2), () {
+      _statusMessageTimer = Timer(const Duration(seconds: 3), () {
         if (mounted) {
           setState(() {
             _statusMessage = '';
@@ -62,27 +60,369 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     }
   }
 
+  /// 로딩 상태 변경
+  void _setLoading(bool loading) {
+    setState(() {
+      _isLoading = loading;
+    });
+  }
+
+  /// 성공 메시지 표시 후 다이얼로그 닫기
+  void _showSuccessAndClose(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFF6B8E23),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    Navigator.of(context).pop(true);
+  }
+
+  // ===== 드래그앤드롭 이벤트 처리 =====
+
   void _setupDragAndDrop() {
-    // 웹 드래그앤드롭 이벤트 설정
     try {
       final window = web.window;
 
-      // 전체 창에서 드래그오버 이벤트 방지 (파일이 브라우저에서 열리는 것 방지)
+      // 전체 창에서 기본 드래그 동작 방지
       window.addEventListener(
           'dragover',
           (web.Event e) {
             e.preventDefault();
           }.toJS);
-
       window.addEventListener(
           'drop',
           (web.Event e) {
             e.preventDefault();
           }.toJS);
     } catch (e) {
-      print('드래그앤드롭 설정 오류: $e');
+      debugPrint('드래그앤드롭 설정 오류: $e');
     }
   }
+
+  void _setupDropZoneEvents(BuildContext context) {
+    try {
+      final body = web.document.body;
+      if (body == null) return;
+
+      // 드래그 진입
+      body.addEventListener(
+          'dragenter',
+          (web.Event e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            final dragEvent = e as web.DragEvent;
+            if ((dragEvent.dataTransfer?.types.length ?? 0) > 0) {
+              setState(() => _isDragOver = true);
+            }
+          }.toJS);
+
+      // 드래그 오버
+      body.addEventListener(
+          'dragover',
+          (web.Event e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            final dragEvent = e as web.DragEvent;
+            if ((dragEvent.dataTransfer?.types.length ?? 0) > 0) {
+              dragEvent.dataTransfer?.dropEffect = 'copy';
+              if (!_isDragOver) {
+                setState(() => _isDragOver = true);
+              }
+            }
+          }.toJS);
+
+      // 드래그 탈출
+      body.addEventListener(
+          'dragleave',
+          (web.Event e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            final mouseEvent = e as web.MouseEvent;
+            if (mouseEvent.clientX <= 0 ||
+                mouseEvent.clientY <= 0 ||
+                mouseEvent.clientX >= web.window.innerWidth ||
+                mouseEvent.clientY >= web.window.innerHeight) {
+              setState(() => _isDragOver = false);
+            }
+          }.toJS);
+
+      // 파일 드롭
+      body.addEventListener(
+          'drop',
+          (web.Event e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            setState(() => _isDragOver = false);
+
+            final dataTransfer = (e as web.DragEvent).dataTransfer;
+            if (dataTransfer != null && dataTransfer.files.length > 0) {
+              _handleFileSelection(dataTransfer.files);
+            }
+          }.toJS);
+    } catch (e) {
+      debugPrint('드래그앤드롭 이벤트 설정 실패: $e');
+    }
+  }
+
+  // ===== 파일 처리 메서드들 =====
+
+  /// 파일 선택 버튼 클릭 처리
+  Future<void> _pickFiles() async {
+    try {
+      final uploadInput = web.HTMLInputElement()
+        ..type = 'file'
+        ..accept = '.csv'
+        ..multiple = true;
+
+      uploadInput.click();
+
+      uploadInput.addEventListener(
+          'change',
+          (web.Event event) {
+            final files = uploadInput.files;
+            if (files != null && files.length > 0) {
+              _handleFileSelection(files);
+            }
+          }.toJS);
+    } catch (e) {
+      _setTemporaryStatusMessage(
+          AddVocabularyStrings.errorFileSelection(e.toString()),
+          isError: true);
+    }
+  }
+
+  /// 파일 선택 통합 처리 (드롭 & 클릭)
+  void _handleFileSelection(web.FileList files) async {
+    _setLoading(true);
+    setState(() {
+      _statusMessage = '';
+      _importResults.clear();
+      _totalWords = 0;
+    });
+
+    try {
+      // WebFileList를 List<web.File>로 변환
+      final fileList = <web.File>[];
+      for (int i = 0; i < files.length; i++) {
+        final file = files.item(i);
+        if (file != null) fileList.add(file);
+      }
+
+      // 서비스를 통해 파일 파싱
+      final results = await _importService.parseMultipleCSVFiles(fileList);
+
+      if (results.isEmpty) {
+        _setLoading(false);
+        _setTemporaryStatusMessage(AddVocabularyStrings.csvFilesOnly,
+            isError: true);
+        return;
+      }
+
+      final successResults = results.where((r) => r.isSuccess).toList();
+      final errorResults = results.where((r) => !r.isSuccess).toList();
+
+      if (successResults.isEmpty) {
+        _setLoading(false);
+        _setTemporaryStatusMessage(AddVocabularyStrings.noProcessableFiles,
+            isError: true);
+        return;
+      }
+
+      // 상태 업데이트
+      setState(() {
+        _importResults = successResults;
+        _totalWords =
+            successResults.fold(0, (sum, result) => sum + result.wordCount);
+      });
+      _setLoading(false);
+
+      // 부분 오류 알림
+      if (errorResults.isNotEmpty) {
+        final errorMessage =
+            errorResults.map((r) => r.errorMessage ?? '알 수 없는 오류').join('\n');
+        _setTemporaryStatusMessage(
+            AddVocabularyStrings.partialErrorMessage(errorMessage, _totalWords),
+            isError: true);
+      }
+    } catch (e) {
+      _setLoading(false);
+      _setTemporaryStatusMessage(
+          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          isError: true);
+    }
+  }
+
+  // ===== 가져오기 처리 메서드들 =====
+
+  /// 가져오기 확인 및 실행
+  Future<void> _confirmImport() async {
+    if (_importResults.isEmpty) return;
+
+    // 중복 파일 확인
+    final duplicateFiles = _importResults
+        .where((result) =>
+            _hiveService.vocabularyFileExists(result.vocabularyFile))
+        .map((result) => result.vocabularyFile)
+        .toList();
+
+    if (duplicateFiles.isNotEmpty) {
+      final action = await _showDuplicateDialog(duplicateFiles);
+      if (action == null || action == 'cancel') return;
+
+      await _processDuplicateAction(action, duplicateFiles);
+    } else {
+      await _processImport();
+    }
+  }
+
+  /// 중복 처리 다이얼로그 표시
+  Future<String?> _showDuplicateDialog(List<String> duplicateFiles) async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.orange, size: 24),
+              const SizedBox(width: 8),
+              Text(AddVocabularyStrings.duplicateVocabularyTitle),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(AddVocabularyStrings.duplicateVocabularyMessage(
+                  duplicateFiles.length == 1
+                      ? duplicateFiles.first
+                      : AddVocabularyStrings.multipleVocabularies(
+                          duplicateFiles.length))),
+              if (duplicateFiles.length > 1) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    AddVocabularyStrings.duplicateList(
+                        duplicateFiles.join(', ')),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('cancel'),
+              child: Text(BaseStrings.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('replace'),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: Text(AddVocabularyStrings.replaceVocabulary),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('merge'),
+              style: TextButton.styleFrom(foregroundColor: Colors.blue),
+              child: Text(AddVocabularyStrings.mergeVocabulary),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('rename'),
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+              child: Text(AddVocabularyStrings.renameVocabulary),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// 중복 처리 액션 실행
+  Future<void> _processDuplicateAction(
+      String action, List<String> duplicateFiles) async {
+    _setLoading(true);
+
+    try {
+      await _importService.handleDuplicateVocabulary(
+          action, duplicateFiles, _importResults);
+      await _processImport(isMerge: action == 'merge');
+    } catch (e) {
+      _setLoading(false);
+      _setTemporaryStatusMessage(
+          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          isError: true);
+    }
+  }
+
+  /// 실제 가져오기 처리
+  Future<void> _processImport({bool isMerge = false}) async {
+    _setLoading(true);
+    setState(() => _statusMessage = '');
+
+    try {
+      int totalImported = 0;
+      final errorMessages = <String>[];
+
+      // 모든 결과 처리
+      for (final result in _importResults) {
+        try {
+          final imported = await _importService.importVocabularyData(
+            result.words,
+            isMerge: isMerge,
+          );
+          totalImported += imported;
+        } catch (e) {
+          errorMessages.add('${result.fileName}: ${e.toString()}');
+        }
+      }
+
+      _setLoading(false);
+
+      if (errorMessages.isNotEmpty) {
+        _setTemporaryStatusMessage(
+            AddVocabularyStrings.partialErrorMessage(
+                errorMessages.join('\n'), totalImported),
+            isError: true);
+
+        // 부분 성공 시 2초 후 닫기
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) Navigator.of(context).pop(true);
+        });
+      } else {
+        _showSuccessAndClose(AddVocabularyStrings.vocabAddedSuccess);
+      }
+    } catch (e) {
+      _setLoading(false);
+      _setTemporaryStatusMessage(
+          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          isError: true);
+    }
+  }
+
+  /// 미리보기 취소
+  void _cancelPreview() {
+    setState(() {
+      _importResults.clear();
+      _totalWords = 0;
+      _statusMessage = '';
+      _isLoading = false;
+    });
+  }
+
+  // ===== UI 빌드 메서드들 =====
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +430,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: 600,
+        constraints: const BoxConstraints(maxHeight: 700),
         padding: const EdgeInsets.all(24),
         child: _importResults.isEmpty
             ? _buildFileSelectionView()
@@ -98,122 +439,96 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     );
   }
 
+  /// 파일 선택 화면
   Widget _buildFileSelectionView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // 제목
-        Row(
-          children: [
-            const Icon(Icons.add_circle_outline,
-                color: Color(0xFF6B8E23), size: 28),
-            const SizedBox(width: 12),
-            Text(
-              AddVocabularyStrings.dialogTitle,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF6B8E23),
-              ),
-            ),
-            const Spacer(),
-            IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close),
-            ),
-          ],
+        _buildDialogHeader(
+          icon: Icons.add_circle_outline,
+          title: AddVocabularyStrings.dialogTitle,
         ),
         const SizedBox(height: 24),
-
-        // 드래그앤드롭 영역
         _buildDropZone(),
-
         const SizedBox(height: 16),
-
-        // 또는 구분선
-        Row(
-          children: [
-            const Expanded(child: Divider()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                AddVocabularyStrings.orDivider,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            const Expanded(child: Divider()),
-          ],
-        ),
-
+        _buildOrDivider(),
         const SizedBox(height: 16),
-
-        // 파일 선택 버튼
         _buildFilePickerButton(),
-
         const SizedBox(height: 24),
-
-        // 상태 메시지
         if (_statusMessage.isNotEmpty) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: _statusMessage.contains(AddVocabularyStrings.errorKeyword)
-                  ? Colors.red[50]
-                  : Colors.green[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color:
-                    _statusMessage.contains(AddVocabularyStrings.errorKeyword)
-                        ? Colors.red[200]!
-                        : Colors.green[200]!,
-              ),
-            ),
-            child: Text(
-              _statusMessage,
-              style: TextStyle(
-                color:
-                    _statusMessage.contains(AddVocabularyStrings.errorKeyword)
-                        ? Colors.red[700]
-                        : Colors.green[700],
-                fontSize: 14,
-              ),
-            ),
-          ),
+          _buildStatusMessage(),
           const SizedBox(height: 16),
         ],
-
-        // 도움말 (상태 메시지가 있을 때는 숨김)
         if (_statusMessage.isEmpty) _buildHelpSection(),
-
-        // 로딩 인디케이터
         if (_isLoading) ...[
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              const SizedBox(width: 12),
-              Text(AddVocabularyStrings.processingFile),
-            ],
-          ),
+          _buildLoadingIndicator(AddVocabularyStrings.processingFile),
         ],
       ],
     );
   }
 
+  /// 파일 미리보기 화면
+  Widget _buildFilePreviewView() {
+    return SizedBox(
+      height: 600,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDialogHeader(
+            icon: Icons.preview_outlined,
+            title: AddVocabularyStrings.previewTitleWithCount(
+                _importResults.length),
+          ),
+          const SizedBox(height: 16),
+          _buildFileSummary(),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _statusMessage.isNotEmpty
+                ? _buildStatusMessage(isExpanded: true)
+                : _buildPreviewContent(),
+          ),
+          const SizedBox(height: 16),
+          _buildPreviewActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  /// 다이얼로그 헤더
+  Widget _buildDialogHeader({required IconData icon, required String title}) {
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF6B8E23), size: 28),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6B8E23),
+            ),
+          ),
+        ),
+        IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+          tooltip: BaseStrings.close,
+        ),
+      ],
+    );
+  }
+
+  /// 드래그앤드롭 영역
   Widget _buildDropZone() {
-    return MouseRegion(
-      child: Listener(
-        onPointerDown: (details) {},
-        child: Container(
+    return Builder(
+      builder: (context) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _setupDropZoneEvents(context);
+        });
+
+        return Container(
           width: double.infinity,
           height: 200,
           decoration: BoxDecoration(
@@ -223,174 +538,115 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
             ),
             borderRadius: BorderRadius.circular(12),
             color: _isDragOver
-                ? const Color(0xFF6B8E23).withValues(alpha: 0.2)
+                ? const Color(0xFF6B8E23).withValues(alpha: 0.1)
                 : Colors.grey[50],
-            boxShadow: _isDragOver
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF6B8E23).withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
           ),
-          child: _buildDropZoneContentWithEvents(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropZoneContentWithEvents() {
-    return Builder(
-      builder: (context) {
-        // HTML 요소에 직접 드래그앤드롭 이벤트 연결
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _setupDropZoneEvents(context);
-        });
-
-        return _buildDropZoneContent();
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.cloud_upload_outlined,
+                size: 48,
+                color: _isDragOver ? const Color(0xFF6B8E23) : Colors.grey[400],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                _isDragOver
+                    ? AddVocabularyStrings.dragDropActive
+                    : AddVocabularyStrings.dragMultipleFiles,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color:
+                      _isDragOver ? const Color(0xFF6B8E23) : Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AddVocabularyStrings.csvOnlySupport,
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
       },
     );
   }
 
-  void _setupDropZoneEvents(BuildContext context) {
-    try {
-      // 전체 다이얼로그 영역에 드래그앤드롭 이벤트 추가
-      final body = web.document.body;
-
-      if (body != null) {
-        // 드래그 진입
-        body.addEventListener(
-            'dragenter',
-            (web.Event e) {
-              e.preventDefault();
-              e.stopPropagation();
-
-              final dragEvent = e as web.DragEvent;
-              final types = dragEvent.dataTransfer?.types;
-              if (types != null && types.length > 0) {
-                setState(() {
-                  _isDragOver = true;
-                });
-              }
-            }.toJS);
-
-        // 드래그 오버 (계속 드래그 중)
-        body.addEventListener(
-            'dragover',
-            (web.Event e) {
-              e.preventDefault();
-              e.stopPropagation();
-
-              final dragEvent = e as web.DragEvent;
-              final types = dragEvent.dataTransfer?.types;
-              if (types != null && types.length > 0) {
-                dragEvent.dataTransfer?.dropEffect = 'copy';
-                if (!_isDragOver) {
-                  setState(() {
-                    _isDragOver = true;
-                  });
-                }
-              }
-            }.toJS);
-
-        // 드래그 탈출 (더 정확한 감지)
-        body.addEventListener(
-            'dragleave',
-            (web.Event e) {
-              e.preventDefault();
-              e.stopPropagation();
-
-              // 창 경계를 벗어날 때만 상태 변경
-              final mouseEvent = e as web.MouseEvent;
-              if (mouseEvent.clientX <= 0 ||
-                  mouseEvent.clientY <= 0 ||
-                  mouseEvent.clientX >= web.window.innerWidth ||
-                  mouseEvent.clientY >= web.window.innerHeight) {
-                setState(() {
-                  _isDragOver = false;
-                });
-              }
-            }.toJS);
-
-        // 파일 드롭
-        body.addEventListener(
-            'drop',
-            (web.Event e) {
-              e.preventDefault();
-              e.stopPropagation();
-
-              setState(() {
-                _isDragOver = false;
-              });
-
-              final dataTransfer = (e as web.DragEvent).dataTransfer;
-              if (dataTransfer != null && dataTransfer.files.length > 0) {
-                _handleDroppedFiles(dataTransfer.files);
-              }
-            }.toJS);
-      }
-    } catch (e) {
-      print('드래그앤드롭 이벤트 설정 실패: $e');
-    }
-  }
-
-  Widget _buildDropZoneContent() {
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.cloud_upload_outlined,
-            size: 48,
-            color: _isDragOver ? const Color(0xFF6B8E23) : Colors.grey[400],
+  /// 구분선
+  Widget _buildOrDivider() {
+    return Row(
+      children: [
+        const Expanded(child: Divider()),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            AddVocabularyStrings.orDivider,
+            style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
-          const SizedBox(height: 16),
-          Text(
-            _isDragOver
-                ? AddVocabularyStrings.dragDropActive
-                : AddVocabularyStrings.dragMultipleFiles,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: _isDragOver ? const Color(0xFF6B8E23) : Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AddVocabularyStrings.csvOnlySupport,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
+        ),
+        const Expanded(child: Divider()),
+      ],
     );
   }
 
+  /// 파일 선택 버튼
   Widget _buildFilePickerButton() {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _isLoading ? null : _pickFile,
+        onPressed: _isLoading ? null : _pickFiles,
         icon: const Icon(Icons.folder_open),
         label: Text(AddVocabularyStrings.selectFiles),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF6B8E23),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          elevation: 2,
         ),
       ),
     );
   }
 
+  /// 상태 메시지
+  Widget _buildStatusMessage({bool isExpanded = false}) {
+    final isError = _statusMessage.contains(AddVocabularyStrings.errorKeyword);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isError ? Colors.red[50] : Colors.green[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isError ? Colors.red[200]! : Colors.green[200]!,
+        ),
+      ),
+      child: isExpanded
+          ? SingleChildScrollView(
+              child: Text(
+                _statusMessage,
+                style: TextStyle(
+                  color: isError ? Colors.red[700] : Colors.green[700],
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            )
+          : Text(
+              _statusMessage,
+              style: TextStyle(
+                color: isError ? Colors.red[700] : Colors.green[700],
+                fontSize: 14,
+              ),
+            ),
+    );
+  }
+
+  /// 도움말 섹션
   Widget _buildHelpSection() {
     return Container(
       width: double.infinity,
@@ -434,497 +690,182 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     );
   }
 
-  Future<void> _pickFile() async {
-    try {
-      // 웹에서 파일 선택 (package:web 방식) - 여러 파일 선택 지원
-      final uploadInput = web.HTMLInputElement()
-        ..type = 'file'
-        ..accept = '.csv'
-        ..multiple = true; // 여러 파일 선택 허용
-
-      uploadInput.click();
-
-      uploadInput.addEventListener(
-          'change',
-          (web.Event event) {
-            final files = uploadInput.files;
-            if (files != null && files.length > 0) {
-              setState(() {
-                _isLoading = true;
-                _statusMessage = '';
-              });
-              _processFiles(files);
-            }
-          }.toJS);
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileSelection(e.toString()),
-          isError: true);
-    }
+  /// 로딩 인디케이터
+  Widget _buildLoadingIndicator(String message) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        const SizedBox(width: 12),
+        Text(message),
+      ],
+    );
   }
 
-  // 드래그앤드롭으로 여러 파일 처리
-  void _handleDroppedFiles(web.FileList files) {
-    setState(() {
-      _isLoading = true;
-      _statusMessage = '';
-      _importResults.clear();
-      _totalWords = 0;
-    });
-    _processFiles(files);
-  }
-
-  // 여러 파일을 처리하는 통합 메서드 (서비스 사용)
-  void _processFiles(web.FileList files) async {
-    try {
-      // 웹 FileList를 List<web.File>로 변환
-      List<web.File> fileList = [];
-      for (int i = 0; i < files.length; i++) {
-        final file = files.item(i);
-        if (file != null) {
-          fileList.add(file);
-        }
-      }
-
-      // 서비스를 통해 파일 처리
-      final results = await _importService.parseMultipleCSVFiles(fileList);
-
-      if (results.isEmpty) {
-        setState(() {
-          _isLoading = false;
-        });
-        _setTemporaryStatusMessage(AddVocabularyStrings.csvFilesOnly,
-            isError: true);
-        return;
-      }
-
-      // 성공한 결과만 필터링
-      final successResults = results.where((r) => r.isSuccess).toList();
-      final errorResults = results.where((r) => !r.isSuccess).toList();
-
-      if (successResults.isEmpty) {
-        setState(() {
-          _isLoading = false;
-        });
-        _setTemporaryStatusMessage(AddVocabularyStrings.noProcessableFiles,
-            isError: true);
-        return;
-      }
-
-      setState(() {
-        _importResults = successResults;
-        _totalWords =
-            successResults.fold(0, (sum, result) => sum + result.wordCount);
-        _isLoading = false;
-      });
-
-      // 에러가 있으면 상태 메시지로 표시
-      if (errorResults.isNotEmpty) {
-        _setTemporaryStatusMessage(
-            AddVocabularyStrings.partialErrorMessage(
-                errorResults
-                    .map((r) => r.errorMessage ?? '알 수 없는 오류')
-                    .join('\n'),
-                _totalWords),
-            isError: true);
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileProcessing(e.toString()),
-          isError: true);
-    }
-  }
-
-  // 파일 미리보기 화면 (서비스 결과 사용)
-  Widget _buildFilePreviewView() {
-    return SizedBox(
-      height: 600,
+  /// 파일 요약 정보
+  Widget _buildFileSummary() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 제목
           Row(
             children: [
-              const Icon(Icons.preview_outlined,
-                  color: Color(0xFF6B8E23), size: 28),
-              const SizedBox(width: 12),
+              const Icon(Icons.folder_copy, color: Color(0xFF6B8E23), size: 20),
+              const SizedBox(width: 8),
               Text(
-                AddVocabularyStrings.previewTitleWithCount(
-                    _importResults.length),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF6B8E23),
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: _cancelPreview,
-                icon: const Icon(Icons.close),
+                AddVocabularyStrings.selectedFiles(_importResults.length),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-
-          // 전체 파일 정보 요약
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.folder_copy,
-                        color: Color(0xFF6B8E23), size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      AddVocabularyStrings.selectedFiles(_importResults.length),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(AddVocabularyStrings.totalWords(_totalWords)),
-                const SizedBox(height: 8),
-                Text(
-                  AddVocabularyStrings.fileList(
-                      _importResults.map((r) => r.fileName).join(', ')),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 메인 컨텐츠 영역
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_statusMessage.isNotEmpty)
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _statusMessage
-                                .contains(AddVocabularyStrings.errorKeyword)
-                            ? Colors.red[50]
-                            : Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _statusMessage
-                                  .contains(AddVocabularyStrings.errorKeyword)
-                              ? Colors.red[200]!
-                              : Colors.green[200]!,
-                        ),
-                      ),
-                      child: SingleChildScrollView(
-                        child: Text(
-                          _statusMessage,
-                          style: TextStyle(
-                            color: _statusMessage
-                                    .contains(AddVocabularyStrings.errorKeyword)
-                                ? Colors.red[700]
-                                : Colors.green[700],
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else if (_importResults.isNotEmpty) ...[
-                  Text(
-                    AddVocabularyStrings.dataPreview,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: _importResults.map((result) {
-                          return Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[50],
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.blue[200]!),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '📄 ${result.fileName}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF6B8E23),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                ...result.previewData.take(3).map((data) {
-                                  return Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 2),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          '${data['TargetVoca'] ?? ''} → ${data['ReferenceVoca'] ?? ''}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w500),
-                                        ),
-                                        if (data['POS']?.isNotEmpty == true ||
-                                            data['Type']?.isNotEmpty == true)
-                                          Text(
-                                            '${data['POS'] ?? ''} ${data['Type'] ?? ''}'
-                                                .trim(),
-                                            style: TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey[600]),
-                                          ),
-                                        const SizedBox(height: 4),
-                                      ],
-                                    ),
-                                  );
-                                }),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 버튼들
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _cancelPreview,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: Text(BaseStrings.cancel),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _confirmImport,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B8E23),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: _isLoading
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(AddVocabularyStrings.importingFiles),
-                          ],
-                        )
-                      : Text(AddVocabularyStrings.importFilesButton(
-                          _importResults.length)),
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(AddVocabularyStrings.totalWords(_totalWords)),
+          const SizedBox(height: 8),
+          Text(
+            AddVocabularyStrings.fileList(
+                _importResults.map((r) => r.fileName).join(', ')),
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
       ),
     );
   }
 
-  // 미리보기 취소
-  void _cancelPreview() {
-    setState(() {
-      _importResults.clear();
-      _totalWords = 0;
-      _statusMessage = '';
-      _isLoading = false;
-    });
-  }
-
-  // 여러 파일 가져오기 확인 (서비스 사용)
-  Future<void> _confirmImport() async {
-    if (_importResults.isNotEmpty) {
-      // 중복 어휘집 확인
-      List<String> duplicateFiles = [];
-      for (final result in _importResults) {
-        if (_hiveService.vocabularyFileExists(result.vocabularyFile)) {
-          duplicateFiles.add(result.vocabularyFile);
-        }
-      }
-
-      // 중복이 있으면 사용자에게 확인
-      if (duplicateFiles.isNotEmpty) {
-        final action = await _showDuplicateDialog(duplicateFiles);
-        if (action == null || action == 'cancel') {
-          return; // 사용자가 취소한 경우
-        }
-        await _processDuplicateAction(action, duplicateFiles);
-      } else {
-        await _processImport();
-      }
-    }
-  }
-
-  // 중복 어휘집 처리 다이얼로그
-  Future<String?> _showDuplicateDialog(List<String> duplicateFiles) async {
-    return showDialog<String>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(AddVocabularyStrings.duplicateVocabularyTitle),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(AddVocabularyStrings.duplicateVocabularyMessage(
-                  duplicateFiles.length == 1
-                      ? duplicateFiles.first
-                      : AddVocabularyStrings.multipleVocabularies(
-                          duplicateFiles.length))),
-              if (duplicateFiles.length > 1) ...[
-                const SizedBox(height: 8),
-                Text(
-                    AddVocabularyStrings.duplicateList(
-                        duplicateFiles.join(', ')),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ],
-            ],
+  /// 미리보기 내용
+  Widget _buildPreviewContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          AddVocabularyStrings.dataPreview,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: _importResults
+                  .map((result) => _buildFilePreviewCard(result))
+                  .toList(),
+            ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop('cancel'),
-              child: Text(BaseStrings.cancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop('replace'),
-              child: Text(AddVocabularyStrings.replaceVocabulary),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop('merge'),
-              child: Text(AddVocabularyStrings.mergeVocabulary),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop('rename'),
-              child: Text(AddVocabularyStrings.renameVocabulary),
-            ),
-          ],
-        );
-      },
+        ),
+      ],
     );
   }
 
-  // 중복 처리 액션 실행 (서비스 사용)
-  Future<void> _processDuplicateAction(
-      String action, List<String> duplicateFiles) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // 서비스에서 중복 처리
-      await _importService.handleDuplicateVocabulary(
-          action, duplicateFiles, _importResults);
-
-      await _processImport(isMerge: action == 'merge');
-    } catch (e) {
-      setState(() {
-        _statusMessage = AddVocabularyStrings.errorFileProcessing(e.toString());
-        _isLoading = false;
-      });
-    }
+  /// 개별 파일 미리보기 카드
+  Widget _buildFilePreviewCard(VocabularyImportResult result) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.description, color: Color(0xFF6B8E23), size: 16),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  result.fileName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF6B8E23),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue[100],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${result.wordCount}${BaseStrings.wordsUnit}',
+                  style: TextStyle(fontSize: 11, color: Colors.blue[700]),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...result.previewData.take(3).map((data) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${data['TargetVoca'] ?? ''} → ${data['ReferenceVoca'] ?? ''}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  if (data['POS']?.isNotEmpty == true ||
+                      data['Type']?.isNotEmpty == true)
+                    Text(
+                      '${data['POS'] ?? ''} ${data['Type'] ?? ''}'.trim(),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
 
-  // 실제 가져오기 처리 (서비스 사용)
-  Future<void> _processImport({bool isMerge = false}) async {
-    setState(() {
-      _statusMessage = '';
-    });
-
-    try {
-      int totalImported = 0;
-      List<String> errorMessages = [];
-
-      // 모든 결과의 단어들을 서비스를 통해 저장
-      for (final result in _importResults) {
-        try {
-          final imported = await _importService.importVocabularyData(
-            result.words,
-            isMerge: isMerge,
-          );
-          totalImported += imported;
-        } catch (e) {
-          errorMessages.add('${result.fileName}: ${e.toString()}');
-        }
-      }
-
-      setState(() {
-        if (errorMessages.isNotEmpty) {
-          _statusMessage = AddVocabularyStrings.partialErrorMessage(
-              errorMessages.join('\n'), totalImported);
-          _isLoading = false;
-        } else {
-          _isLoading = false;
-
-          // 성공 시 SnackBar 표시
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(AddVocabularyStrings.vocabAddedSuccess),
-              backgroundColor: const Color(0xFF6B8E23),
-              duration: const Duration(seconds: 2),
+  /// 미리보기 액션 버튼들
+  Widget _buildPreviewActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _cancelPreview,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey[600],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-          );
-
-          Navigator.of(context).pop(true);
-        }
-      });
-
-      // 에러가 있는 경우만 2초 후 다이얼로그 닫기
-      if (errorMessages.isNotEmpty) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (mounted) {
-            Navigator.of(context).pop(true);
-          }
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _statusMessage = AddVocabularyStrings.errorFileProcessing(e.toString());
-        _isLoading = false;
-      });
-    }
+            child: Text(BaseStrings.cancel),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _confirmImport,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6B8E23),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: _isLoading
+                ? _buildLoadingIndicator(AddVocabularyStrings.importingFiles)
+                : Text(AddVocabularyStrings.importFilesButton(
+                    _importResults.length)),
+          ),
+        ),
+      ],
+    );
   }
 }

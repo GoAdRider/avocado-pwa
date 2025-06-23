@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_layout.dart';
+import '../widgets/vocabulary_card.dart';
+import '../services/vocabulary_service.dart';
+import '../services/filter_service.dart';
 import '../utils/strings/base_strings.dart';
 import '../utils/strings/home_strings.dart';
 import '../utils/language_provider.dart';
@@ -16,18 +19,25 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // 서비스
+  final VocabularyService _vocabularyService = VocabularyService.instance;
+  final FilterService _filterService = FilterService.instance;
+
   // 상태 관리 변수들
   bool _isSelectionMode = false; // 최근 학습 기록 선택 모드
   bool _isVocabSingleSelect = true; // 어휘집 단일/다중 선택 모드
 
   // 선택된 항목들
   final Set<int> _selectedRecentRecords = {}; // 최근 학습 기록 선택
-  Set<int> _selectedVocabSets = {}; // 어휘집 선택
+  Set<String> _selectedVocabFiles = {}; // 어휘집 파일명 선택
   final Set<String> _selectedPOSFilters = {}; // 품사 필터 선택
   final Set<String> _selectedTypeFilters = {}; // 타입 필터 선택
 
   // 학습 모드 (라디오 버튼)
   String _studyMode = 'TargetVoca';
+
+  // 어휘집 데이터
+  List<VocabularyFileInfo> _vocabularyFiles = [];
 
   final TextEditingController _editController = TextEditingController();
 
@@ -111,9 +121,62 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _loadVocabularyFiles();
+  }
+
+  @override
   void dispose() {
     _editController.dispose();
     super.dispose();
+  }
+
+  /// 어휘집 목록 불러오기
+  void _loadVocabularyFiles() {
+    _vocabularyFiles = _vocabularyService.getAllVocabularyFileInfos();
+  }
+
+  /// 품사 필터 변경 시 유효하지 않은 타입 필터들 제거
+  void _cleanupInvalidTypeFilters() {
+    if (_selectedVocabFiles.isEmpty || _selectedPOSFilters.isEmpty) return;
+
+    final selectedFiles = _selectedVocabFiles.toList();
+    final selectedPosValues =
+        _selectedPOSFilters.map((filter) => filter.split('(')[0]).toList();
+
+    // 현재 선택된 품사에 대한 유효한 타입들 계산
+    final validTypeCounts = _filterService.getTypeCountsWithPositionFilter(
+      selectedFiles,
+      selectedPosValues,
+    );
+
+    // 개수가 0인 타입 필터들 제거
+    _selectedTypeFilters.removeWhere((typeFilter) {
+      final typeName = typeFilter.split('(')[0];
+      return (validTypeCounts[typeName] ?? 0) == 0;
+    });
+  }
+
+  /// 타입 필터 변경 시 유효하지 않은 품사 필터들 제거
+  void _cleanupInvalidPositionFilters() {
+    if (_selectedVocabFiles.isEmpty || _selectedTypeFilters.isEmpty) return;
+
+    final selectedFiles = _selectedVocabFiles.toList();
+    final selectedTypeValues =
+        _selectedTypeFilters.map((filter) => filter.split('(')[0]).toList();
+
+    // 현재 선택된 타입에 대한 유효한 품사들 계산
+    final validPositionCounts = _filterService.getPositionCountsWithTypeFilter(
+      selectedFiles,
+      selectedTypeValues,
+    );
+
+    // 개수가 0인 품사 필터들 제거
+    _selectedPOSFilters.removeWhere((posFilter) {
+      final posName = posFilter.split('(')[0];
+      return (validPositionCounts[posName] ?? 0) == 0;
+    });
   }
 
   @override
@@ -783,10 +846,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: Text(
             HomeStrings.selectedVocabInfo(
-                count: int.parse(_getSelectedVocabCount()),
-                favorites: 112,
-                wrong: 0,
-                wrongCount: 0),
+                count: _getSelectedWordCount(),
+                favorites: _getSelectedFavoriteCount(),
+                wrong: _getSelectedWrongCount(),
+                wrongCount: _getSelectedWrongCountTotal()),
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
@@ -800,10 +863,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 setState(() {
                   _isVocabSingleSelect = !_isVocabSingleSelect;
-                  if (_isVocabSingleSelect && _selectedVocabSets.length > 1) {
-                    final first = _selectedVocabSets.first;
-                    _selectedVocabSets.clear();
-                    _selectedVocabSets.add(first);
+                  if (_isVocabSingleSelect && _selectedVocabFiles.length > 1) {
+                    final first = _selectedVocabFiles.first;
+                    _selectedVocabFiles.clear();
+                    _selectedVocabFiles.add(first);
                   }
                 });
               },
@@ -828,7 +891,8 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 setState(() {
                   _isVocabSingleSelect = false;
-                  _selectedVocabSets = {0, 1, 2, 3, 4, 5};
+                  _selectedVocabFiles =
+                      _vocabularyFiles.map((v) => v.fileName).toSet();
                 });
               },
               child: Container(
@@ -847,7 +911,7 @@ class _HomeScreenState extends State<HomeScreen> {
             InkWell(
               onTap: () {
                 setState(() {
-                  _selectedVocabSets.clear();
+                  _selectedVocabFiles.clear();
                 });
               },
               child: Container(
@@ -864,14 +928,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             InkWell(
-              onTap: _selectedVocabSets.isNotEmpty
+              onTap: _selectedVocabFiles.isNotEmpty
                   ? () => _showDeleteVocabDialog()
                   : null,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _selectedVocabSets.isNotEmpty
+                  color: _selectedVocabFiles.isNotEmpty
                       ? const Color(0xFFDC3545)
                       : Colors.grey,
                   borderRadius: BorderRadius.circular(6),
@@ -883,12 +947,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             InkWell(
-              onTap: _selectedVocabSets.isNotEmpty ? () => print('내보내기') : null,
+              onTap:
+                  _selectedVocabFiles.isNotEmpty ? () => print('내보내기') : null,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _selectedVocabSets.isNotEmpty
+                  color: _selectedVocabFiles.isNotEmpty
                       ? const Color(0xFF6B8E23)
                       : Colors.grey,
                   borderRadius: BorderRadius.circular(6),
@@ -900,14 +965,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             InkWell(
-              onTap: _selectedVocabSets.isNotEmpty
+              onTap: _selectedVocabFiles.isNotEmpty
                   ? () => _showResetWrongCountDialog()
                   : null,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _selectedVocabSets.isNotEmpty
+                  color: _selectedVocabFiles.isNotEmpty
                       ? const Color(0xFFFFC107)
                       : Colors.grey,
                   borderRadius: BorderRadius.circular(6),
@@ -919,14 +984,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             InkWell(
-              onTap: _selectedVocabSets.isNotEmpty
+              onTap: _selectedVocabFiles.isNotEmpty
                   ? () => _showResetFavoriteDialog()
                   : null,
               child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _selectedVocabSets.isNotEmpty
+                  color: _selectedVocabFiles.isNotEmpty
                       ? const Color(0xFF9ACD32)
                       : Colors.grey,
                   borderRadius: BorderRadius.circular(6),
@@ -945,72 +1010,155 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        // 어휘집 카드들 (현재는 추가 버튼만)
-        Row(
-          children: [
-            _buildAddVocabCard(),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  HomeStrings.noVocabMessage,
-                  style: const TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        // 어휘집 카드들
+        _buildVocabularyCards(),
       ],
     );
   }
 
-  // 새 어휘집 추가 카드
+  // 새 어휘집 추가 카드 (6열 그리드에 최적화)
   Widget _buildAddVocabCard() {
-    return InkWell(
-      onTap: () => _showAddVocabularyDialog(),
-      child: Container(
-        width: 160,
-        height: 120,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFF6B8E23), width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.2),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Card(
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(
+          color: Color(0xFF6B8E23),
+          width: 2,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.add_circle_outline,
-              size: 32,
-              color: Color(0xFF6B8E23),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              HomeStrings.addNewVocab,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+      ),
+      child: InkWell(
+        onTap: () => _showAddVocabularyDialog(),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.add_circle_outline,
+                size: 24,
                 color: Color(0xFF6B8E23),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                HomeStrings.addNewVocab,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B8E23),
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  /// 어휘집 카드들 표시
+  Widget _buildVocabularyCards() {
+    return Column(
+      children: [
+        // 어휘집이 없을 때 메시지
+        if (_vocabularyFiles.isEmpty) ...[
+          Row(
+            children: [
+              _buildAddVocabCard(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    HomeStrings.noVocabMessage,
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ] else ...[
+          // 어휘집 카드들을 6열 그리드로 표시
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 6, // 6열 그리드
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 1.2, // 높이를 더 줄임 (최대한 컴팩트하게)
+            ),
+            itemCount: _vocabularyFiles.length + 1, // +1 for add button
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                // 첫 번째는 항상 추가 버튼
+                return _buildAddVocabCard();
+              } else {
+                // 나머지는 어휘집 카드들
+                final vocabInfo = _vocabularyFiles[index - 1];
+                final isSelected =
+                    _selectedVocabFiles.contains(vocabInfo.fileName);
+
+                return VocabularyCard(
+                  vocabularyInfo: vocabInfo,
+                  isSelected: isSelected,
+                  showSelection: true,
+                  onTap: () => _onVocabularyCardTap(vocabInfo.fileName),
+                  onLongPress: () =>
+                      _onVocabularyCardLongPress(vocabInfo.fileName),
+                );
+              }
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 어휘집 카드 탭 처리
+  void _onVocabularyCardTap(String fileName) {
+    setState(() {
+      if (_isVocabSingleSelect) {
+        // 단일 선택 모드
+        _selectedVocabFiles.clear();
+        _selectedVocabFiles.add(fileName);
+      } else {
+        // 다중 선택 모드
+        if (_selectedVocabFiles.contains(fileName)) {
+          _selectedVocabFiles.remove(fileName);
+        } else {
+          _selectedVocabFiles.add(fileName);
+        }
+      }
+
+      // 어휘집 선택이 변경되면 필터 초기화
+      _selectedPOSFilters.clear();
+      _selectedTypeFilters.clear();
+    });
+  }
+
+  /// 어휘집 카드 롱프레스 처리
+  void _onVocabularyCardLongPress(String fileName) {
+    // 롱프레스 시 선택 모드 토글 또는 메뉴 표시
+    setState(() {
+      if (!_selectedVocabFiles.contains(fileName)) {
+        _selectedVocabFiles.add(fileName);
+
+        // 어휘집 선택이 변경되면 필터 초기화
+        _selectedPOSFilters.clear();
+        _selectedTypeFilters.clear();
+      }
+    });
   }
 
   // 새로운 어휘집 추가 다이얼로그
@@ -1022,15 +1170,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 성공적으로 어휘집이 추가되었으면 화면 새로고침
     if (result == true) {
-      setState(() {
-        // 화면을 새로고침해서 새로 추가된 어휘집을 반영
-      });
+      _loadVocabularyFiles(); // 어휘집 목록 다시 로드
       // 성공 알림은 AddVocabularyDialog에서 처리됨
     }
   }
 
   // 필터 섹션
   Widget _buildFilters() {
+    // 선택된 어휘집들을 기반으로 품사/타입 정보 가져오기
+    final selectedFiles = _selectedVocabFiles.toList();
+
+    if (selectedFiles.isEmpty) {
+      return _buildEmptyFiltersSection();
+    }
+
+    // 선택된 필터에서 실제 값 추출 (괄호와 개수 제거)
+    final selectedPosValues =
+        _selectedPOSFilters.map((filter) => filter.split('(')[0]).toList();
+    final selectedTypeValues =
+        _selectedTypeFilters.map((filter) => filter.split('(')[0]).toList();
+
+    // 상호 필터링을 고려한 개수 계산
+    Map<String, int> positionCounts;
+    Map<String, int> typeCounts;
+
+    if (selectedTypeValues.isNotEmpty) {
+      // 타입 필터가 선택된 경우: 해당 타입에 맞는 품사들의 개수 계산
+      positionCounts = _filterService.getPositionCountsWithTypeFilter(
+          selectedFiles, selectedTypeValues);
+      // 모든 가능한 품사 목록을 가져와서 0개인 것도 표시
+      final allPositions =
+          _filterService.getAllPositionsForFiles(selectedFiles);
+      for (final pos in allPositions) {
+        positionCounts.putIfAbsent(pos, () => 0);
+      }
+    } else {
+      // 타입 필터가 선택되지 않은 경우: 전체 품사 개수
+      positionCounts = _filterService.getPositionCountsForFiles(selectedFiles);
+    }
+
+    if (selectedPosValues.isNotEmpty) {
+      // 품사 필터가 선택된 경우: 해당 품사에 맞는 타입들의 개수 계산
+      typeCounts = _filterService.getTypeCountsWithPositionFilter(
+          selectedFiles, selectedPosValues);
+      // 모든 가능한 타입 목록을 가져와서 0개인 것도 표시
+      final allTypes = _filterService.getAllTypesForFiles(selectedFiles);
+      for (final type in allTypes) {
+        typeCounts.putIfAbsent(type, () => 0);
+      }
+    } else {
+      // 품사 필터가 선택되지 않은 경우: 전체 타입 개수
+      typeCounts = _filterService.getTypeCountsForFiles(selectedFiles);
+    }
+
+    // 품사 목록 생성 (품사명(개수) 형태)
+    final positionFilters = positionCounts.entries
+        .map((entry) => '${entry.key}(${entry.value})')
+        .toList()
+      ..sort();
+
+    // 타입 목록 생성 (타입명(개수) 형태)
+    final typeFilters = typeCounts.entries
+        .map((entry) => '${entry.key}(${entry.value})')
+        .toList()
+      ..sort();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1063,7 +1267,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // 품사 필터
         _buildFilterSection(
           HomeStrings.posFilter,
-          ['명사(45)', '동사(23)', '형용사(12)', '부사(8)', '기타(5)'],
+          positionFilters,
           _selectedPOSFilters,
           (filter) {
             setState(() {
@@ -1072,6 +1276,8 @@ class _HomeScreenState extends State<HomeScreen> {
               } else {
                 _selectedPOSFilters.add(filter);
               }
+              // 품사 필터 변경 시 더 이상 유효하지 않은 타입 필터들 제거
+              _cleanupInvalidTypeFilters();
             });
           },
         ),
@@ -1079,7 +1285,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // 타입 필터
         _buildFilterSection(
           HomeStrings.typeFilter,
-          ['기본어휘(78)', '고급어휘(34)', '관용구(12)', '속담(5)'],
+          typeFilters,
           _selectedTypeFilters,
           (filter) {
             setState(() {
@@ -1088,10 +1294,86 @@ class _HomeScreenState extends State<HomeScreen> {
               } else {
                 _selectedTypeFilters.add(filter);
               }
+              // 타입 필터 변경 시 더 이상 유효하지 않은 품사 필터들 제거
+              _cleanupInvalidPositionFilters();
             });
           },
         ),
       ],
+    );
+  }
+
+  // 어휘집 미선택 시 전체 필터 섹션
+  Widget _buildEmptyFiltersSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              HomeStrings.sectionPosTypeFilter,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE3F2FD),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                HomeStrings.filteredWords(
+                    words: 0, favorites: 0, wrong: 0, wrongCount: 0),
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildNoSelectionMessage(HomeStrings.posFilter),
+        const SizedBox(height: 16),
+        _buildNoSelectionMessage(HomeStrings.typeFilter),
+      ],
+    );
+  }
+
+  // 어휘집 미선택 시 메시지
+  Widget _buildNoSelectionMessage(String filterType) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.info_outline,
+            color: Colors.grey[600],
+            size: 24,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            HomeStrings.filterNoSelectionGuide(filterType),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            HomeStrings.filterSelectVocabFirst,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1424,37 +1706,77 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  String _getSelectedVocabCount() {
-    return _selectedVocabSets.length.toString();
+  /// 선택된 어휘집들의 총 단어 수 반환 (서비스 사용)
+  int _getSelectedWordCount() {
+    return _vocabularyService.getSelectedWordCount(
+        _vocabularyFiles, _selectedVocabFiles);
   }
 
-  // 필터된 단어 카운트 메서드들
+  /// 선택된 즐겨찾기 개수 반환 (서비스 사용)
+  int _getSelectedFavoriteCount() {
+    return _vocabularyService.getSelectedFavoriteCount(
+        _vocabularyFiles, _selectedVocabFiles);
+  }
+
+  /// 선택된 틀린 단어 개수 반환 (서비스 사용)
+  int _getSelectedWrongCount() {
+    return _vocabularyService.getSelectedWrongCount(
+        _vocabularyFiles, _selectedVocabFiles);
+  }
+
+  /// 선택된 틀린 횟수 총합 반환 (서비스 사용)
+  int _getSelectedWrongCountTotal() {
+    return _vocabularyService.getSelectedWrongCountTotal(
+        _vocabularyFiles, _selectedVocabFiles);
+  }
+
+  // 필터된 단어 카운트 메서드들 (서비스 사용)
   String _getFilteredWordCount() {
-    // 임시로 기본값 반환 (나중에 실제 필터링 로직 구현)
-    int baseCount = 2457; // 선택된 어휘집들의 총 단어 수
-    if (_selectedPOSFilters.isEmpty && _selectedTypeFilters.isEmpty) {
-      return baseCount.toString();
-    }
-    // 필터가 적용된 경우 감소된 수를 반환
-    return (baseCount * 0.7).round().toString(); // 임시 계산
+    final selectedFiles =
+        _selectedVocabFiles.isNotEmpty ? _selectedVocabFiles.toList() : null;
+
+    final count = _vocabularyService.getFilteredWordCount(
+      vocabularyFiles: selectedFiles,
+      posFilters: _selectedPOSFilters,
+      typeFilters: _selectedTypeFilters,
+    );
+    return count.toString();
   }
 
   String _getFilteredFavoriteCount() {
-    int baseCount = 112;
-    if (_selectedPOSFilters.isEmpty && _selectedTypeFilters.isEmpty) {
-      return baseCount.toString();
-    }
-    return (baseCount * 0.6).round().toString();
+    final selectedFiles =
+        _selectedVocabFiles.isNotEmpty ? _selectedVocabFiles.toList() : null;
+
+    final count = _vocabularyService.getFilteredFavoriteCount(
+      vocabularyFiles: selectedFiles,
+      posFilters: _selectedPOSFilters,
+      typeFilters: _selectedTypeFilters,
+    );
+    return count.toString();
   }
 
   String _getFilteredWrongCount() {
-    // 현재는 틀린 단어가 0개
-    return "0";
+    final selectedFiles =
+        _selectedVocabFiles.isNotEmpty ? _selectedVocabFiles.toList() : null;
+
+    final count = _vocabularyService.getFilteredWrongWordsCount(
+      vocabularyFiles: selectedFiles,
+      posFilters: _selectedPOSFilters,
+      typeFilters: _selectedTypeFilters,
+    );
+    return count.toString();
   }
 
   String _getFilteredWrongCountTotal() {
-    // 현재는 틀린 횟수가 0회
-    return "0";
+    final selectedFiles =
+        _selectedVocabFiles.isNotEmpty ? _selectedVocabFiles.toList() : null;
+
+    final count = _vocabularyService.getFilteredWrongCountTotal(
+      vocabularyFiles: selectedFiles,
+      posFilters: _selectedPOSFilters,
+      typeFilters: _selectedTypeFilters,
+    );
+    return count.toString();
   }
 
   // 어휘집 삭제 확인 다이얼로그
@@ -1464,7 +1786,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => AlertDialog(
         title: Text(HomeStrings.deleteVocabTitle),
         content:
-            Text(HomeStrings.deleteVocabMessage(_selectedVocabSets.length)),
+            Text(HomeStrings.deleteVocabMessage(_selectedVocabFiles.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1473,9 +1795,9 @@ class _HomeScreenState extends State<HomeScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              print('어휘집 ${_selectedVocabSets.length}개 삭제 실행');
+              print('어휘집 ${_selectedVocabFiles.length}개 삭제 실행');
               setState(() {
-                _selectedVocabSets.clear();
+                _selectedVocabFiles.clear();
               });
             },
             child: Text(BaseStrings.confirmDelete,
@@ -1492,8 +1814,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(HomeStrings.resetWrongCountTitle),
-        content:
-            Text(HomeStrings.resetWrongCountMessage(_selectedVocabSets.length)),
+        content: Text(
+            HomeStrings.resetWrongCountMessage(_selectedVocabFiles.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1519,7 +1841,7 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => AlertDialog(
         title: Text(HomeStrings.resetFavoritesTitle),
         content:
-            Text(HomeStrings.resetFavoritesMessage(_selectedVocabSets.length)),
+            Text(HomeStrings.resetFavoritesMessage(_selectedVocabFiles.length)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
