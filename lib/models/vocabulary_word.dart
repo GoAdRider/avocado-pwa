@@ -1,17 +1,48 @@
-class VocabularyWord {
-  final String id;
-  final String vocabularyFile;
-  final String? pos;
-  final String? type;
-  final String targetVoca;
-  final String? targetPronunciation;
-  final String referenceVoca;
-  final String? targetDesc;
-  final String? referenceDesc;
-  final String? targetEx;
-  final String? referenceEx;
-  final bool isFavorite;
-  final int wrongCount;
+import 'package:hive/hive.dart';
+
+part 'vocabulary_word.g.dart';
+
+@HiveType(typeId: 0)
+class VocabularyWord extends HiveObject {
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
+  String vocabularyFile;
+
+  @HiveField(2)
+  String? pos;
+
+  @HiveField(3)
+  String? type;
+
+  @HiveField(4)
+  String targetVoca;
+
+  @HiveField(5)
+  String? targetPronunciation;
+
+  @HiveField(6)
+  String referenceVoca;
+
+  @HiveField(7)
+  String? targetDesc;
+
+  @HiveField(8)
+  String? referenceDesc;
+
+  @HiveField(9)
+  String? targetEx;
+
+  @HiveField(10)
+  String? referenceEx;
+
+  @HiveField(11)
+  DateTime importedDate;
+
+  // 임시 속성들 (실제로는 Favorite, WordStats 테이블에서 관리)
+  bool isFavorite;
+  int wrongCount;
   final DateTime? lastStudyDate;
 
   VocabularyWord({
@@ -26,10 +57,11 @@ class VocabularyWord {
     this.referenceDesc,
     this.targetEx,
     this.referenceEx,
+    DateTime? importedDate,
     this.isFavorite = false,
     this.wrongCount = 0,
     this.lastStudyDate,
-  });
+  }) : importedDate = importedDate ?? DateTime.now();
 
   VocabularyWord copyWith({
     String? id,

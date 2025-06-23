@@ -1,38 +1,44 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'item.dart';
+part of 'personal_record.dart';
 
 // **************************************************************************
 // TypeAdapterGenerator
 // **************************************************************************
 
-class ItemAdapter extends TypeAdapter<Item> {
+class PersonalRecordAdapter extends TypeAdapter<PersonalRecord> {
   @override
-  final int typeId = 0;
+  final int typeId = 7;
 
   @override
-  Item read(BinaryReader reader) {
+  PersonalRecord read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Item(
-      title: fields[0] as String,
-      isCompleted: fields[1] as bool,
-      createdAt: fields[2] as DateTime?,
+    return PersonalRecord(
+      gameType: fields[0] as String,
+      highScore: fields[1] as int,
+      achievedDate: fields[2] as DateTime?,
+      wordId: fields[3] as String?,
+      vocabularyFile: fields[4] as String?,
     );
   }
 
   @override
-  void write(BinaryWriter writer, Item obj) {
+  void write(BinaryWriter writer, PersonalRecord obj) {
     writer
-      ..writeByte(3)
+      ..writeByte(5)
       ..writeByte(0)
-      ..write(obj.title)
+      ..write(obj.gameType)
       ..writeByte(1)
-      ..write(obj.isCompleted)
+      ..write(obj.highScore)
       ..writeByte(2)
-      ..write(obj.createdAt);
+      ..write(obj.achievedDate)
+      ..writeByte(3)
+      ..write(obj.wordId)
+      ..writeByte(4)
+      ..write(obj.vocabularyFile);
   }
 
   @override
@@ -41,7 +47,7 @@ class ItemAdapter extends TypeAdapter<Item> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ItemAdapter &&
+      other is PersonalRecordAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

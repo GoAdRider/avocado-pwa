@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../utils/strings/toggle_strings.dart';
 import '../utils/strings/base_strings.dart';
-import '../utils/language_provider.dart';
 
 class ToggleDialog extends StatefulWidget {
   const ToggleDialog({super.key});
@@ -66,10 +65,10 @@ class _ToggleDialogState extends State<ToggleDialog> {
     });
   }
 
-  void _handleKeyPress(RawKeyEvent event) {
+  void _handleKeyPress(KeyEvent event) {
     if (!_isEditingShortcut) return;
 
-    if (event is RawKeyDownEvent) {
+    if (event is KeyDownEvent) {
       String newKey = event.logicalKey.keyLabel;
 
       // 유효성 검사
@@ -224,9 +223,9 @@ class _ToggleDialogState extends State<ToggleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return RawKeyboardListener(
+    return KeyboardListener(
       focusNode: FocusNode(),
-      onKey: _handleKeyPress,
+      onKeyEvent: _handleKeyPress,
       child: Dialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

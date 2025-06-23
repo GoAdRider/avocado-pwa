@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'models/item.dart';
 import 'screens/home_screen.dart';
 import 'utils/language_provider.dart';
+import 'services/hive_service.dart';
 
 void main() async {
   // Flutter 위젯 바인딩 초기화
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Hive 초기화
-  await Hive.initFlutter();
-  Hive.registerAdapter(ItemAdapter());
-
-  // Box 열기
-  await Hive.openBox<Item>('items');
+  // Hive 데이터베이스 초기화
+  await HiveService.initialize();
 
   runApp(const MyApp());
 }

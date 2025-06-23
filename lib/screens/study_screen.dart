@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import '../widgets/app_layout.dart';
 import '../models/vocabulary_word.dart';
 import '../utils/strings/study_strings.dart';
-import '../utils/strings/base_strings.dart';
-import '../utils/language_provider.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
 class StudyScreen extends StatefulWidget {
@@ -173,24 +171,6 @@ class _StudyScreenState extends State<StudyScreen> {
     ));
   }
 
-  void _previousCard() {
-    if (_session.canGoPrevious) {
-      _updateSession(_session.copyWith(
-        currentIndex: _session.currentIndex - 1,
-        currentSide: CardSide.front, // 이전 카드로 갈 때는 앞면으로
-      ));
-    }
-  }
-
-  void _nextCard() {
-    if (_session.canGoNext) {
-      _updateSession(_session.copyWith(
-        currentIndex: _session.currentIndex + 1,
-        currentSide: CardSide.front, // 다음 카드로 갈 때는 앞면으로
-      ));
-    }
-  }
-
   void _exitStudy() {
     Navigator.of(context).pop();
   }
@@ -268,7 +248,7 @@ class _StudyScreenState extends State<StudyScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -315,9 +295,9 @@ class _StudyScreenState extends State<StudyScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
+        color: Colors.blue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Text(
         '${StudyStrings.selectedVocabularies}($vocabularyCount${StudyStrings.vocabularyCountSuffix})',
@@ -339,9 +319,9 @@ class _StudyScreenState extends State<StudyScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withOpacity(0.3)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Text(
         '${StudyStrings.progress}: $current/$total ($percent%)',
@@ -400,13 +380,13 @@ class _StudyScreenState extends State<StudyScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
+                  color: Colors.grey.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
               border: Border.all(
-                color: Colors.grey.withOpacity(0.2),
+                color: Colors.grey.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -445,7 +425,7 @@ class _StudyScreenState extends State<StudyScreen> {
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
       ),
       child: Text(
         pos.isNotEmpty && type.isNotEmpty
@@ -469,9 +449,9 @@ class _StudyScreenState extends State<StudyScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
+              color: Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red.withOpacity(0.3)),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: Text(
               '${StudyStrings.wrongCountPrefix}${word.wrongCount}${StudyStrings.wrongCountSuffix}',
@@ -491,8 +471,8 @@ class _StudyScreenState extends State<StudyScreen> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: word.isFavorite
-                  ? Colors.orange.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.1),
+                  ? Colors.orange.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
@@ -557,7 +537,7 @@ class _StudyScreenState extends State<StudyScreen> {
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -593,9 +573,9 @@ class _StudyScreenState extends State<StudyScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
+                  color: Colors.blue.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   '"$example"',
@@ -643,101 +623,8 @@ class _StudyScreenState extends State<StudyScreen> {
         : word.referenceVoca;
   }
 
-  // 하단 컨트롤 버튼들
-  Widget _buildControlButtons() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // 이전 버튼
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _session.canGoPrevious ? _previousCard : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey[100],
-                foregroundColor: Colors.grey[700],
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(StudyStrings.previous),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // 뒤집기 버튼
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _flipCard,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[50],
-                foregroundColor: Colors.blue[700],
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(StudyStrings.flip),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // 섞기 버튼
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _shuffleWords,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[50],
-                foregroundColor: Colors.green[700],
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(StudyStrings.shuffle),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // 다음 버튼
-          Expanded(
-            child: ElevatedButton(
-              onPressed: _session.canGoNext ? _nextCard : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[100],
-                foregroundColor: Colors.blue[700],
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(StudyStrings.next),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    // 언어 프로바이더를 호출하여 언어 변경을 즉시 반영
-    final languageProvider = LanguageProvider.of(context);
-
     if (_session.words.isEmpty) {
       return AppLayout(
         child: Center(

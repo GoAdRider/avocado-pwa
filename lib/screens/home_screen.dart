@@ -3,7 +3,6 @@ import '../widgets/app_layout.dart';
 import '../utils/strings/base_strings.dart';
 import '../utils/strings/home_strings.dart';
 import '../utils/language_provider.dart';
-import 'toggle_dialog.dart';
 import '../models/vocabulary_word.dart';
 import 'study_screen.dart';
 
@@ -299,13 +298,13 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 40,
             offset: const Offset(0, 8),
             spreadRadius: 0,
@@ -349,20 +348,20 @@ class _HomeScreenState extends State<HomeScreen> {
       child: InkWell(
         onTap: () => _handleReviewTap(reviewType),
         borderRadius: BorderRadius.circular(18),
-        splashColor: borderColor.withOpacity(0.1),
-        highlightColor: borderColor.withOpacity(0.05),
+        splashColor: borderColor.withValues(alpha: 0.1),
+        highlightColor: borderColor.withValues(alpha: 0.05),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: backgroundColor,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: borderColor.withOpacity(0.2),
+              color: borderColor.withValues(alpha: 0.2),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: borderColor.withOpacity(0.1),
+                color: borderColor.withValues(alpha: 0.1),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
                 spreadRadius: 0,
@@ -379,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: borderColor.withOpacity(0.15),
+                      color: borderColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
@@ -422,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 data['description']!,
                 style: TextStyle(
                   fontSize: 16,
-                  color: textColor.withOpacity(0.8),
+                  color: textColor.withValues(alpha: 0.8),
                   height: 1.4,
                 ),
               ),
@@ -481,19 +480,19 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
           borderRadius: BorderRadius.circular(14),
-          splashColor: borderColor.withOpacity(0.1),
+          splashColor: borderColor.withValues(alpha: 0.1),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: backgroundColor.withOpacity(0.8),
+              color: backgroundColor.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: borderColor.withOpacity(0.3),
+                color: borderColor.withValues(alpha: 0.3),
                 width: 1.2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: borderColor.withOpacity(0.08),
+                  color: borderColor.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                   spreadRadius: 0,
@@ -506,7 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: borderColor.withOpacity(0.15),
+                    color: borderColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
@@ -546,13 +545,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: borderColor.withOpacity(0.1),
+                    color: borderColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Icon(
                     Icons.chevron_left,
                     size: 14,
-                    color: borderColor.withOpacity(0.7),
+                    color: borderColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -2193,11 +2192,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 Colors.red,
               ),
               _buildTestButton(
-                '🔴 긴급 복습',
-                () => _navigateToStudy(StudyMode.urgentReview),
-                Colors.red[800]!,
-              ),
-              _buildTestButton(
                 '🟡 권장 복습',
                 () => _navigateToStudy(StudyMode.recommendedReview),
                 Colors.amber,
@@ -2223,12 +2217,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         foregroundColor: color,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
-          side: BorderSide(color: color.withOpacity(0.3)),
+          side: BorderSide(color: color.withValues(alpha: 0.3)),
         ),
       ),
       child: Text(text, style: const TextStyle(fontSize: 14)),
@@ -2345,7 +2339,6 @@ class _HomeScreenState extends State<HomeScreen> {
         // 망각곡선 기반 복습은 일부 단어만 선택
         return baseWords.take(3).toList();
       case StudyMode.cardStudy:
-      default:
         return baseWords;
     }
   }
