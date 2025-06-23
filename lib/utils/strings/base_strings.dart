@@ -34,6 +34,7 @@ class BaseStrings {
       'export': '내보내기',
       'select_all_filter': '모두선택',
       'deselect_all_filter': '모두해제',
+      'start': '시작하기',
     },
     'EN': {
       // 헤더 (모든 페이지 공통)
@@ -70,6 +71,7 @@ class BaseStrings {
       'export': 'Export',
       'select_all_filter': 'Select All',
       'deselect_all_filter': 'Deselect All',
+      'start': 'Start',
     },
   };
 
@@ -129,4 +131,5 @@ class BaseStrings {
   static String get export => get('export');
   static String get selectAllFilter => get('select_all_filter');
   static String get deselectAllFilter => get('deselect_all_filter');
+  static String get start => get('start');
 }

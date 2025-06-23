@@ -180,6 +180,17 @@ class HomeStrings {
 • 완전 숙지 확인: Random 모드
 
 💡 추천: 초보자는 TargetVoca, 고급자는 Random!''',
+
+      // 망각곡선 복습 시스템
+      'smart_review_title': '🧠 망각곡선 기반 복습',
+      'urgent_review_title': '긴급 복습',
+      'urgent_review_desc': '놓치면 기억에서 사라져요!',
+      'recommended_review_title': '권장 복습',
+      'recommended_review_desc': '오늘 하면 기억력 UP!',
+      'preview_review_title': '여유 복습',
+      'preview_review_desc': '시간 날 때 해보세요',
+      'forgotten_review_title': '망각 위험',
+      'forgotten_review_desc': '기억에서 사라지고 있어요!',
     },
     'EN': {
       // 홈화면 섹션 제목들
@@ -363,6 +374,17 @@ class HomeStrings {
 • Complete mastery check: Random mode
 
 💡 Recommendation: Beginners use TargetVoca, Advanced use Random!''',
+
+      // 망각곡선 복습 시스템
+      'smart_review_title': '🧠 Forgetting Curve Review',
+      'urgent_review_title': 'Urgent Review',
+      'urgent_review_desc': 'Will disappear from memory if missed!',
+      'recommended_review_title': 'Recommended Review',
+      'recommended_review_desc': 'Memory boost if done today!',
+      'preview_review_title': 'Preview Review',
+      'preview_review_desc': 'Do it when you have time',
+      'forgotten_review_title': 'Forgetting Risk',
+      'forgotten_review_desc': 'Disappearing from memory!',
     },
   };
 
@@ -557,4 +579,15 @@ class HomeStrings {
       get('vocab_selection_help_content');
   static String get studyModeHelpTitle => get('study_mode_help_title');
   static String get studyModeHelpContent => get('study_mode_help_content');
+
+  // 망각곡선 복습 시스템
+  static String get smartReviewTitle => get('smart_review_title');
+  static String get urgentReviewTitle => get('urgent_review_title');
+  static String get urgentReviewDesc => get('urgent_review_desc');
+  static String get recommendedReviewTitle => get('recommended_review_title');
+  static String get recommendedReviewDesc => get('recommended_review_desc');
+  static String get previewReviewTitle => get('preview_review_title');
+  static String get previewReviewDesc => get('preview_review_desc');
+  static String get forgottenReviewTitle => get('forgotten_review_title');
+  static String get forgottenReviewDesc => get('forgotten_review_desc');
 }
