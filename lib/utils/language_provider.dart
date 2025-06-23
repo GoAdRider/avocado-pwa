@@ -3,6 +3,7 @@ import 'strings/base_strings.dart';
 import 'strings/home_strings.dart';
 import 'strings/toggle_strings.dart';
 import 'strings/study_strings.dart';
+import 'strings/add_vocabulary_strings.dart';
 
 class LanguageProvider extends InheritedWidget {
   final String currentLanguage;
@@ -49,6 +50,7 @@ class _LanguageManagerState extends State<LanguageManager> {
       HomeStrings.setLanguage(_currentLanguage);
       ToggleStrings.setLanguage(_currentLanguage);
       StudyStrings.setLanguage(_currentLanguage);
+      AddVocabularyStrings.setLanguage(_currentLanguage);
     });
   }
 

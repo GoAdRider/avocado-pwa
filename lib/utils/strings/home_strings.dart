@@ -40,6 +40,8 @@ class HomeStrings {
           '선택된 어휘집: 📝{count}개 ⭐{favorites}개 ❌{wrong}개 🔢{wrongCount}회',
       'vocab_info_guide': '📖 어휘집 정보 가이드: 📝단어수 ⭐즐겨찾기 ❌틀린단어 🔢틀린횟수 📅최근학습',
       'add_new_vocab': '새로운 어휘집\n추가하기',
+      'no_vocab_message': '어휘집을 추가하시면 여기에 표시됩니다.',
+
       'filtered_words':
           '필터된 단어: 📝{words}개 ⭐{favorites}개 ❌{wrong}개 🔢{wrongCount}회',
 
@@ -233,6 +235,8 @@ class HomeStrings {
       'vocab_info_guide':
           '📖 Vocab Info Guide: 📝Words ⭐Favorites ❌Wrong 🔢Count 📅Recent',
       'add_new_vocab': 'Add New\nVocabulary',
+      'no_vocab_message': 'Vocabularies will be displayed here once added.',
+
       'filtered_words':
           'Filtered: 📝{words} ⭐{favorites} ❌{wrong} 🔢{wrongCount}',
 
@@ -463,6 +467,8 @@ class HomeStrings {
       });
   static String get vocabInfoGuide => get('vocab_info_guide');
   static String get addNewVocab => get('add_new_vocab');
+  static String get noVocabMessage => get('no_vocab_message');
+
   static String filteredWords(
           {required int words,
           required int favorites,

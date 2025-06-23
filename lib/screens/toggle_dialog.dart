@@ -232,7 +232,7 @@ class _ToggleDialogState extends State<ToggleDialog> {
         ),
         child: Container(
           width: 600,
-          height: 400,
+          height: 600,
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

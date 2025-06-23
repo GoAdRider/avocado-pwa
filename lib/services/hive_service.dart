@@ -126,6 +126,21 @@ class HiveService {
     }
   }
 
+  /// 어휘집 목록 가져오기
+  List<String> getVocabularyFiles() {
+    final vocabularyFiles = <String>{};
+    for (final word in vocabularyWordsBox.values) {
+      vocabularyFiles.add(word.vocabularyFile);
+    }
+    return vocabularyFiles.toList()..sort();
+  }
+
+  /// 어휘집 존재 여부 확인
+  bool vocabularyFileExists(String vocabularyFile) {
+    return vocabularyWordsBox.values
+        .any((word) => word.vocabularyFile == vocabularyFile);
+  }
+
   // =========================
   // Quote 관련 메서드
   // =========================

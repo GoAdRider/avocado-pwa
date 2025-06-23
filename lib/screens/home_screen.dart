@@ -6,6 +6,8 @@ import '../utils/language_provider.dart';
 import '../models/vocabulary_word.dart';
 import 'study_screen.dart';
 
+import 'add_vocabulary_dialog.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -27,8 +29,6 @@ class _HomeScreenState extends State<HomeScreen> {
   // 학습 모드 (라디오 버튼)
   String _studyMode = 'TargetVoca';
 
-  // 어휘집 이름 편집 모드
-  int _editingVocabIndex = -1;
   final TextEditingController _editController = TextEditingController();
 
   // 목표 설정 상태 변수들
@@ -945,17 +945,23 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 16),
-        // 어휘집 카드들 (6열 그리드)
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 6,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-          childAspectRatio: 1.1,
+        // 어휘집 카드들 (현재는 추가 버튼만)
+        Row(
           children: [
             _buildAddVocabCard(),
-            ..._buildVocabCards(),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  HomeStrings.noVocabMessage,
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -965,24 +971,41 @@ class _HomeScreenState extends State<HomeScreen> {
   // 새 어휘집 추가 카드
   Widget _buildAddVocabCard() {
     return InkWell(
-      onTap: () => _pickCSVFile(),
+      onTap: () => _showAddVocabularyDialog(),
       child: Container(
-        padding: const EdgeInsets.all(8),
+        width: 160,
+        height: 120,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-              color: const Color(0xFFE0E0E0), style: BorderStyle.solid),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF6B8E23), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.2),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('➕', style: TextStyle(fontSize: 20)),
-            const SizedBox(height: 4),
+            const Icon(
+              Icons.add_circle_outline,
+              size: 32,
+              color: Color(0xFF6B8E23),
+            ),
+            const SizedBox(height: 8),
             Text(
               HomeStrings.addNewVocab,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6B8E23),
+              ),
             ),
           ],
         ),
@@ -990,196 +1013,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // 어휘집 카드들
-  List<Widget> _buildVocabCards() {
-    final vocabSets = [
-      {
-        'name': 'TOPIK_4급완성',
-        'words': '1234',
-        'favorites': '45',
-        'wrong': '0',
-        'wrongCount': '0',
-        'date': '2시간 전'
-      },
-      {
-        'name': 'TOPIK_5급완성',
-        'words': '567',
-        'favorites': '23',
-        'wrong': '0',
-        'wrongCount': '0',
-        'date': '1일 전'
-      },
-      {
-        'name': 'TOPIK_6급완성',
-        'words': '890',
-        'favorites': '67',
-        'wrong': '0',
-        'wrongCount': '0',
-        'date': '없음'
-      },
-      {
-        'name': 'Topik2 감정.csv',
-        'words': '123',
-        'favorites': '12',
-        'wrong': '0',
-        'wrongCount': '0',
-        'date': '3일 전'
-      },
-      {
-        'name': 'Topik2 종합어휘',
-        'words': '456',
-        'favorites': '34',
-        'wrong': '0',
-        'wrongCount': '0',
-        'date': '1주 전'
-      },
-    ];
+  // 새로운 어휘집 추가 다이얼로그
+  Future<void> _showAddVocabularyDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => const AddVocabularyDialog(),
+    );
 
-    return List.generate(vocabSets.length, (index) {
-      final isSelected = _selectedVocabSets.contains(index);
-      final vocab = vocabSets[index];
-      final isEditing = _editingVocabIndex == index;
-
-      return InkWell(
-        onTap: () {
-          setState(() {
-            if (_isVocabSingleSelect) {
-              _selectedVocabSets.clear();
-              _selectedVocabSets.add(index);
-            } else {
-              if (isSelected) {
-                _selectedVocabSets.remove(index);
-              } else {
-                _selectedVocabSets.add(index);
-              }
-            }
-          });
-        },
-        child: Container(
-          height: 140, // 카드 높이 고정
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isSelected ? Colors.blue[100] : Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? Colors.blue : const Color(0xFFE0E0E0),
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              // 제목 영역 (중앙 정렬)
-              SizedBox(
-                height: 50,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: isEditing
-                          ? Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _editController,
-                                    style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                    onSubmitted: (value) =>
-                                        _saveVocabName(index, value),
-                                    autofocus: true,
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                InkWell(
-                                  onTap: () => _cancelVocabEdit(),
-                                  child: const Text('❌',
-                                      style: TextStyle(fontSize: 14)),
-                                ),
-                                const SizedBox(width: 4),
-                                InkWell(
-                                  onTap: () => _saveVocabName(
-                                      index, _editController.text),
-                                  child: const Text('✅',
-                                      style: TextStyle(fontSize: 14)),
-                                ),
-                              ],
-                            )
-                          : Text(
-                              vocab['name']!,
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
-                    ),
-                    if (!isEditing)
-                      InkWell(
-                        onTap: () => _editVocabName(index, vocab['name']!),
-                        child: const Text('✏️', style: TextStyle(fontSize: 14)),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 2x2 정보 그리드
-              Expanded(
-                child: Column(
-                  children: [
-                    // 첫 번째 줄: 📝 단어수, ⭐ 즐겨찾기
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '📝 ${vocab['words']}개',
-                            style: const TextStyle(fontSize: 14),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '⭐ ${vocab['favorites']}개',
-                            style: const TextStyle(fontSize: 14),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    // 두 번째 줄: ❌ 틀린단어, 🔢 틀린횟수
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '❌ ${vocab['wrong']}개',
-                            style: const TextStyle(fontSize: 14),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            '🔢 ${vocab['wrongCount']}회',
-                            style: const TextStyle(fontSize: 14),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              // 날짜 정보 (하단 중앙)
-              Text(
-                '📅 ${vocab['date']}',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    });
+    // 성공적으로 어휘집이 추가되었으면 화면 새로고침
+    if (result == true) {
+      setState(() {
+        // 화면을 새로고침해서 새로 추가된 어휘집을 반영
+      });
+      // 성공 알림은 AddVocabularyDialog에서 처리됨
+    }
   }
 
   // 필터 섹션
@@ -1577,26 +1424,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _editVocabName(int index, String currentName) {
-    setState(() {
-      _editingVocabIndex = index;
-      _editController.text = currentName;
-    });
-  }
-
-  void _saveVocabName(int index, String newName) {
-    setState(() {
-      _editingVocabIndex = -1;
-    });
-    print('어휘집 $index 이름을 $newName으로 변경');
-  }
-
-  void _cancelVocabEdit() {
-    setState(() {
-      _editingVocabIndex = -1;
-    });
-  }
-
   String _getSelectedVocabCount() {
     return _selectedVocabSets.length.toString();
   }
@@ -1705,32 +1532,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             child: Text(BaseStrings.confirmReset,
                 style: const TextStyle(color: Colors.green)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // CSV 파일 선택
-  void _pickCSVFile() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(HomeStrings.addVocabTitle),
-        content: Text(HomeStrings.addVocabMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(BaseStrings.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              print('CSV 파일 선택 실행');
-              // TODO: 실제 파일 선택 구현
-            },
-            child: Text(BaseStrings.fileSelect,
-                style: const TextStyle(color: Colors.blue)),
           ),
         ],
       ),
@@ -2182,7 +1983,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Colors.blue,
               ),
               _buildTestButton(
-                '⭐ 즐겨찾기 복습',
+                HomeStrings.favoriteReview,
                 () => _navigateToStudy(StudyMode.favoriteReview),
                 Colors.orange,
               ),
