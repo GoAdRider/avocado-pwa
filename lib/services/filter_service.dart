@@ -234,14 +234,24 @@ class FilterService {
     return allWords.where((word) {
       // 품사 필터
       if (posFilters != null && posFilters.isNotEmpty) {
-        if (word.pos == null || !posFilters.contains(word.pos)) {
+        final wordPos = (word.pos != null && word.pos!.isNotEmpty)
+            ? word.pos!
+            : NO_POS_INFO;
+        // UI에서 전달받은 필터 값을 내부 상수로 변환해서 비교
+        final convertedPosFilters = convertUIFiltersToService(posFilters);
+        if (!convertedPosFilters.contains(wordPos)) {
           return false;
         }
       }
 
       // 타입 필터
       if (typeFilters != null && typeFilters.isNotEmpty) {
-        if (word.type == null || !typeFilters.contains(word.type)) {
+        final wordType = (word.type != null && word.type!.isNotEmpty)
+            ? word.type!
+            : NO_TYPE_INFO;
+        // UI에서 전달받은 필터 값을 내부 상수로 변환해서 비교
+        final convertedTypeFilters = convertUIFiltersToService(typeFilters);
+        if (!convertedTypeFilters.contains(wordType)) {
           return false;
         }
       }
@@ -305,6 +315,14 @@ class FilterService {
     );
   }
 
+  /// UI 필터 값에서 순수 값 추출 (괄호와 개수 제거)
+  List<String> _extractPureValues(Set<String>? filterValues) {
+    if (filterValues == null) return [];
+    return filterValues
+        .map((filter) => filter.split('(')[0]) // "명사(123)" -> "명사"
+        .toList();
+  }
+
   /// 필터가 적용된 단어 개수 계산 (실제 필터링 적용)
   int getFilteredWordCount({
     List<String>? vocabularyFiles,
@@ -313,8 +331,8 @@ class FilterService {
   }) {
     final filteredInfo = getFilteredWordsInfo(
       vocabularyFiles: vocabularyFiles,
-      posFilters: posFilters?.toList(),
-      typeFilters: typeFilters?.toList(),
+      posFilters: _extractPureValues(posFilters),
+      typeFilters: _extractPureValues(typeFilters),
     );
     return filteredInfo.totalWords;
   }
@@ -327,8 +345,8 @@ class FilterService {
   }) {
     final filteredInfo = getFilteredWordsInfo(
       vocabularyFiles: vocabularyFiles,
-      posFilters: posFilters?.toList(),
-      typeFilters: typeFilters?.toList(),
+      posFilters: _extractPureValues(posFilters),
+      typeFilters: _extractPureValues(typeFilters),
     );
     return filteredInfo.favoriteWords;
   }
@@ -341,8 +359,8 @@ class FilterService {
   }) {
     final filteredInfo = getFilteredWordsInfo(
       vocabularyFiles: vocabularyFiles,
-      posFilters: posFilters?.toList(),
-      typeFilters: typeFilters?.toList(),
+      posFilters: _extractPureValues(posFilters),
+      typeFilters: _extractPureValues(typeFilters),
     );
     return filteredInfo.wrongWords;
   }
@@ -355,8 +373,8 @@ class FilterService {
   }) {
     final filteredInfo = getFilteredWordsInfo(
       vocabularyFiles: vocabularyFiles,
-      posFilters: posFilters?.toList(),
-      typeFilters: typeFilters?.toList(),
+      posFilters: _extractPureValues(posFilters),
+      typeFilters: _extractPureValues(typeFilters),
     );
     return filteredInfo.wrongCount;
   }
