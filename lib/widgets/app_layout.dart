@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'app_header.dart';
 import 'app_footer.dart';
 import '../utils/language_provider.dart';
+import '../screens/toggle_dialog.dart';
 
 class AppLayout extends StatefulWidget {
   final Widget child;
@@ -50,9 +51,14 @@ class _AppLayoutState extends State<AppLayout> {
   }
 
   void _onEditTap() {
-    // 토글확인및편집 기능
-    print('토글확인및편집 클릭');
-    // TODO: 토글확인및편집 화면으로 네비게이션
+    // 토글확인및편집 다이얼로그 표시
+    showDialog(
+      context: context,
+      barrierDismissible: true, // 배경 클릭으로 닫기 가능
+      builder: (BuildContext context) {
+        return const ToggleDialog();
+      },
+    );
   }
 
   void _onSettingsTap() {

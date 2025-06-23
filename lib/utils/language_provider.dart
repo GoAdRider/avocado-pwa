@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'strings/base_strings.dart';
 import 'strings/home_strings.dart';
+import 'strings/toggle_strings.dart';
 
 class LanguageProvider extends InheritedWidget {
   final String currentLanguage;
@@ -45,6 +46,7 @@ class _LanguageManagerState extends State<LanguageManager> {
       _currentLanguage = _isKoreanToEnglish ? 'KR' : 'EN';
       BaseStrings.setLanguage(_currentLanguage);
       HomeStrings.setLanguage(_currentLanguage);
+      ToggleStrings.setLanguage(_currentLanguage);
     });
   }
 

@@ -3,7 +3,7 @@ class BaseStrings {
     'KR': {
       // 헤더 (모든 페이지 공통)
       'app_title': 'aVocaDo',
-      'edit_toggle': '토글확인및편집',
+      'edit_toggle': '단축키편집',
       'settings': '설정',
 
       // 공통 단위 (모든 페이지에서 사용 가능)
@@ -39,7 +39,7 @@ class BaseStrings {
     'EN': {
       // 헤더 (모든 페이지 공통)
       'app_title': 'aVocaDo',
-      'edit_toggle': 'Edit & Toggle',
+      'edit_toggle': 'Shortcuts',
       'settings': 'Settings',
 
       // 공통 단위 (모든 페이지에서 사용 가능)

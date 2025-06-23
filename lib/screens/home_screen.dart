@@ -3,6 +3,7 @@ import '../widgets/app_layout.dart';
 import '../utils/strings/base_strings.dart';
 import '../utils/strings/home_strings.dart';
 import '../utils/language_provider.dart';
+import 'toggle_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
