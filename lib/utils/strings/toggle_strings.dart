@@ -5,8 +5,7 @@ class ToggleStrings {
       'dialog_title': '⌨️ 단축키 편집',
       'close': '닫기',
 
-      // 단축키 편집 섹션
-      'shortcut_section': '⌨️ 단축키 편집',
+      // 단축키 편집 섹션 (dialog_title과 동일하므로 제거)
       'system_shortcuts': '시스템 단축키 (편집 불가)',
       'card_shortcuts': '카드형 학습 단축키',
       'game_shortcuts': '게임 전용 단축키',
@@ -72,8 +71,7 @@ class ToggleStrings {
       'dialog_title': '⌨️ Shortcut Editing',
       'close': 'Close',
 
-      // 단축키 편집 섹션
-      'shortcut_section': '⌨️ Shortcut Editing',
+      // 단축키 편집 섹션 (dialog_title과 동일하므로 제거)
       'system_shortcuts': 'System Shortcuts (Read-only)',
       'card_shortcuts': 'Card-based Learning Shortcuts',
       'game_shortcuts': 'Game-only Shortcuts',
@@ -166,8 +164,8 @@ class ToggleStrings {
   static String get dialogTitle => get('dialog_title');
   static String get close => get('close');
 
-  // 단축키 편집
-  static String get shortcutSection => get('shortcut_section');
+  // 단축키 편집 (dialog_title과 동일하므로 제거)
+  static String get shortcutSection => dialogTitle;
   static String get systemShortcuts => get('system_shortcuts');
   static String get cardShortcuts => get('card_shortcuts');
   static String get gameShortcuts => get('game_shortcuts');

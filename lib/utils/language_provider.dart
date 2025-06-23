@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'strings/base_strings.dart';
 import 'strings/home_strings.dart';
 import 'strings/toggle_strings.dart';
+import 'strings/study_strings.dart';
 
 class LanguageProvider extends InheritedWidget {
   final String currentLanguage;
@@ -47,6 +48,7 @@ class _LanguageManagerState extends State<LanguageManager> {
       BaseStrings.setLanguage(_currentLanguage);
       HomeStrings.setLanguage(_currentLanguage);
       ToggleStrings.setLanguage(_currentLanguage);
+      StudyStrings.setLanguage(_currentLanguage);
     });
   }
 

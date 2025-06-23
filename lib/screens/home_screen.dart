@@ -4,6 +4,8 @@ import '../utils/strings/base_strings.dart';
 import '../utils/strings/home_strings.dart';
 import '../utils/language_provider.dart';
 import 'toggle_dialog.dart';
+import '../models/vocabulary_word.dart';
+import 'study_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -142,6 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildStudyModeSelection(),
             const SizedBox(height: 24),
             _buildStudyMethodSelection(),
+            const SizedBox(height: 32),
+            _buildTestButtons(),
           ],
         ),
       ),
@@ -2147,5 +2151,202 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }
+
+  // 테스트 버튼들
+  Widget _buildTestButtons() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '🧪 학습 화면 테스트',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[700],
+                ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildTestButton(
+                '📖 단어카드 학습',
+                () => _navigateToStudy(StudyMode.cardStudy),
+                Colors.blue,
+              ),
+              _buildTestButton(
+                '⭐ 즐겨찾기 복습',
+                () => _navigateToStudy(StudyMode.favoriteReview),
+                Colors.orange,
+              ),
+              _buildTestButton(
+                '❌ 틀린단어 학습',
+                () => _navigateToStudy(StudyMode.wrongWordsStudy),
+                Colors.red,
+              ),
+              _buildTestButton(
+                '🔴 긴급 복습',
+                () => _navigateToStudy(StudyMode.urgentReview),
+                Colors.red[800]!,
+              ),
+              _buildTestButton(
+                '🟡 권장 복습',
+                () => _navigateToStudy(StudyMode.recommendedReview),
+                Colors.amber,
+              ),
+              _buildTestButton(
+                '🟢 여유 복습',
+                () => _navigateToStudy(StudyMode.leisureReview),
+                Colors.green,
+              ),
+              _buildTestButton(
+                '⚠️ 망각 위험',
+                () => _navigateToStudy(StudyMode.forgettingRisk),
+                Colors.red[900]!,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestButton(String text, VoidCallback onPressed, Color color) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: color.withOpacity(0.3)),
+        ),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 14)),
+    );
+  }
+
+  // 학습 화면으로 이동
+  void _navigateToStudy(StudyMode mode) {
+    final words = _generateSampleWords(mode);
+    final vocabularyFiles = ['TOPIK_4급_완성', 'TOPIK_5급_완성'];
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StudyScreen(
+          mode: mode,
+          words: words,
+          vocabularyFiles: vocabularyFiles,
+        ),
+      ),
+    );
+  }
+
+  // 샘플 단어 데이터 생성
+  List<VocabularyWord> _generateSampleWords(StudyMode mode) {
+    final baseWords = [
+      VocabularyWord(
+        id: '1',
+        vocabularyFile: 'TOPIK_4급_완성',
+        pos: '명사',
+        type: '인사표현',
+        targetVoca: '안녕하세요',
+        targetPronunciation: 'annyeonghaseyo',
+        referenceVoca: 'Hello',
+        targetDesc: '만났을 때 사용하는 기본적인 인사말입니다.',
+        referenceDesc: 'A basic greeting used when meeting someone.',
+        targetEx: '안녕하세요, 처음 뵙겠습니다.',
+        referenceEx: 'Hello, nice to meet you.',
+        isFavorite: false,
+        wrongCount: 0,
+      ),
+      VocabularyWord(
+        id: '2',
+        vocabularyFile: 'TOPIK_4급_완성',
+        pos: '명사',
+        type: '교육',
+        targetVoca: '학교',
+        targetPronunciation: 'hakgyo',
+        referenceVoca: 'School',
+        targetDesc: '교육을 받는 기관입니다.',
+        referenceDesc: 'An institution for education.',
+        targetEx: '내일 학교에 가야 합니다.',
+        referenceEx: 'I have to go to school tomorrow.',
+        isFavorite: true,
+        wrongCount: 2,
+      ),
+      VocabularyWord(
+        id: '3',
+        vocabularyFile: 'TOPIK_5급_완성',
+        pos: '동사',
+        type: '행동',
+        targetVoca: '공부하다',
+        targetPronunciation: 'gongbuhada',
+        referenceVoca: 'To study',
+        targetDesc: '지식을 얻기 위해 배우는 행위입니다.',
+        referenceDesc: 'The act of learning to gain knowledge.',
+        targetEx: '한국어를 열심히 공부하고 있습니다.',
+        referenceEx: 'I am studying Korean diligently.',
+        isFavorite: true,
+        wrongCount: 1,
+      ),
+      VocabularyWord(
+        id: '4',
+        vocabularyFile: 'TOPIK_5급_완성',
+        pos: '형용사',
+        type: '감정',
+        targetVoca: '행복하다',
+        targetPronunciation: 'haengbokhada',
+        referenceVoca: 'To be happy',
+        targetDesc: '기쁘고 만족스러운 상태를 나타냅니다.',
+        referenceDesc: 'Describes a state of joy and satisfaction.',
+        targetEx: '가족과 함께 있을 때 행복합니다.',
+        referenceEx: 'I am happy when I am with my family.',
+        isFavorite: false,
+        wrongCount: 3,
+      ),
+      VocabularyWord(
+        id: '5',
+        vocabularyFile: 'TOPIK_4급_완성',
+        pos: '명사',
+        type: '시간',
+        targetVoca: '오늘',
+        targetPronunciation: 'oneul',
+        referenceVoca: 'Today',
+        targetDesc: '현재의 날을 가리킵니다.',
+        referenceDesc: 'Refers to the current day.',
+        targetEx: '오늘 날씨가 정말 좋네요.',
+        referenceEx: 'The weather is really nice today.',
+        isFavorite: false,
+        wrongCount: 0,
+      ),
+    ];
+
+    // 모드별로 필터링
+    switch (mode) {
+      case StudyMode.favoriteReview:
+        return baseWords.where((word) => word.isFavorite).toList();
+      case StudyMode.wrongWordsStudy:
+        return baseWords.where((word) => word.wrongCount > 0).toList();
+      case StudyMode.urgentReview:
+      case StudyMode.recommendedReview:
+      case StudyMode.leisureReview:
+      case StudyMode.forgettingRisk:
+        // 망각곡선 기반 복습은 일부 단어만 선택
+        return baseWords.take(3).toList();
+      case StudyMode.cardStudy:
+      default:
+        return baseWords;
+    }
   }
 }
