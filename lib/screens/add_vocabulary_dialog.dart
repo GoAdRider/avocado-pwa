@@ -3,6 +3,7 @@ import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'dart:async';
 import '../services/hive_service.dart';
+import '../services/vocabulary_import_service.dart';
 import '../models/vocabulary_word.dart';
 import '../utils/strings/add_vocabulary_strings.dart';
 import '../utils/strings/base_strings.dart';
@@ -16,14 +17,15 @@ class AddVocabularyDialog extends StatefulWidget {
 
 class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
   final HiveService _hiveService = HiveService.instance;
+  final VocabularyImportService _importService =
+      VocabularyImportService.instance;
+
   bool _isDragOver = false;
   bool _isLoading = false;
   String _statusMessage = '';
 
-  // 파일 미리보기 상태 (여러 파일 지원)
-  final List<String> _selectedFileNames = [];
-  final List<String> _selectedFileContents = [];
-  final List<List<Map<String, String>>> _previewDataList = [];
+  // 파일 미리보기 상태
+  List<VocabularyImportResult> _importResults = [];
   int _totalWords = 0;
   Timer? _statusMessageTimer;
 
@@ -89,7 +91,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       child: Container(
         width: 600,
         padding: const EdgeInsets.all(24),
-        child: _selectedFileNames.isEmpty
+        child: _importResults.isEmpty
             ? _buildFileSelectionView()
             : _buildFilePreviewView(),
       ),
@@ -447,14 +449,12 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           (web.Event event) {
             final files = uploadInput.files;
             if (files != null && files.length > 0) {
-              // 파일이 선택된 경우에만 로딩 시작
               setState(() {
                 _isLoading = true;
                 _statusMessage = '';
               });
-              _handleSelectedFiles(files);
+              _processFiles(files);
             }
-            // 파일이 선택되지 않은 경우 (취소된 경우)는 아무것도 하지 않음
           }.toJS);
     } catch (e) {
       setState(() {
@@ -468,153 +468,83 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
   // 드래그앤드롭으로 여러 파일 처리
   void _handleDroppedFiles(web.FileList files) {
-    _processFiles(files);
-  }
-
-  // 파일 선택으로 여러 파일 처리
-  void _handleSelectedFiles(web.FileList files) {
-    _processFiles(files);
-  }
-
-  // 여러 파일을 처리하는 통합 메서드
-  void _processFiles(web.FileList files) {
-    List<web.File> csvFiles = [];
-
-    // CSV 파일만 필터링
-    for (int i = 0; i < files.length; i++) {
-      final file = files.item(i);
-      if (file != null && file.name.toLowerCase().endsWith('.csv')) {
-        csvFiles.add(file);
-      }
-    }
-
-    if (csvFiles.isEmpty) {
-      setState(() {
-        _isLoading = false;
-      });
-      _setTemporaryStatusMessage(AddVocabularyStrings.csvFilesOnly,
-          isError: true);
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _statusMessage = '';
-      _selectedFileNames.clear();
-      _selectedFileContents.clear();
-      _previewDataList.clear();
+      _importResults.clear();
       _totalWords = 0;
     });
-
-    // 각 파일을 비동기로 처리
-    int processedCount = 0;
-    List<String> errorMessages = [];
-
-    for (final file in csvFiles) {
-      final reader = web.FileReader();
-
-      reader.addEventListener(
-          'loadend',
-          (web.Event e) {
-            try {
-              final result = reader.result;
-              if (result != null) {
-                final content = result.toString();
-                _processFileForPreview(content, file.name);
-              }
-            } catch (e) {
-              errorMessages.add('${file.name}: ${e.toString()}');
-            }
-
-            processedCount++;
-
-            // 모든 파일 처리 완료
-            if (processedCount == csvFiles.length) {
-              setState(() {
-                _isLoading = false;
-              });
-
-              if (errorMessages.isNotEmpty) {
-                _setTemporaryStatusMessage(
-                    AddVocabularyStrings.partialErrorMessage(
-                        errorMessages.join('\n'), 0),
-                    isError: true);
-              } else if (_selectedFileNames.isEmpty) {
-                _setTemporaryStatusMessage(
-                    AddVocabularyStrings.noProcessableFiles,
-                    isError: true);
-              }
-            }
-          }.toJS);
-
-      reader.readAsText(file);
-    }
+    _processFiles(files);
   }
 
-  // 개별 파일을 미리보기용으로 처리
-  void _processFileForPreview(String content, String fileName) {
+  // 여러 파일을 처리하는 통합 메서드 (서비스 사용)
+  void _processFiles(web.FileList files) async {
     try {
-      // CSV 파싱해서 미리보기 데이터 생성
-      List<String> lines = content.split('\n');
-      if (lines.isEmpty) {
-        throw Exception('파일이 비어있습니다.');
-      }
-
-      // 헤더 파싱
-      List<String> headers =
-          lines[0].split(',').map((h) => h.trim().replaceAll('"', '')).toList();
-
-      // 필수 컬럼 확인
-      if (!headers.contains('TargetVoca') ||
-          !headers.contains('ReferenceVoca')) {
-        throw Exception('필수 컬럼(TargetVoca, ReferenceVoca)이 없습니다.');
-      }
-
-      // 데이터 미리보기 생성 (최대 3개 라인 - 여러 파일이므로 줄임)
-      List<Map<String, String>> previewData = [];
-      int previewCount = 0;
-      int validWordCount = 0;
-
-      for (int i = 1; i < lines.length; i++) {
-        String line = lines[i].trim();
-        if (line.isEmpty) continue;
-
-        List<String> values = _parseCSVLine(line);
-        if (values.length < 2) continue;
-
-        Map<String, String> rowData = {};
-        for (int j = 0; j < headers.length && j < values.length; j++) {
-          rowData[headers[j]] = values[j];
-        }
-
-        if (rowData['TargetVoca']?.isNotEmpty == true &&
-            rowData['ReferenceVoca']?.isNotEmpty == true) {
-          validWordCount++;
-          if (previewCount < 3) {
-            // 여러 파일이므로 각 파일당 3개만
-            previewData.add(rowData);
-            previewCount++;
-          }
+      // 웹 FileList를 List<web.File>로 변환
+      List<web.File> fileList = [];
+      for (int i = 0; i < files.length; i++) {
+        final file = files.item(i);
+        if (file != null) {
+          fileList.add(file);
         }
       }
 
-      if (validWordCount > 0) {
+      // 서비스를 통해 파일 처리
+      final results = await _importService.parseMultipleCSVFiles(fileList);
+
+      if (results.isEmpty) {
         setState(() {
-          _selectedFileNames.add(fileName);
-          _selectedFileContents.add(content);
-          _previewDataList.add(previewData);
-          _totalWords += validWordCount;
+          _isLoading = false;
         });
+        _setTemporaryStatusMessage(AddVocabularyStrings.csvFilesOnly,
+            isError: true);
+        return;
+      }
+
+      // 성공한 결과만 필터링
+      final successResults = results.where((r) => r.isSuccess).toList();
+      final errorResults = results.where((r) => !r.isSuccess).toList();
+
+      if (successResults.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        _setTemporaryStatusMessage(AddVocabularyStrings.noProcessableFiles,
+            isError: true);
+        return;
+      }
+
+      setState(() {
+        _importResults = successResults;
+        _totalWords =
+            successResults.fold(0, (sum, result) => sum + result.wordCount);
+        _isLoading = false;
+      });
+
+      // 에러가 있으면 상태 메시지로 표시
+      if (errorResults.isNotEmpty) {
+        _setTemporaryStatusMessage(
+            AddVocabularyStrings.partialErrorMessage(
+                errorResults
+                    .map((r) => r.errorMessage ?? '알 수 없는 오류')
+                    .join('\n'),
+                _totalWords),
+            isError: true);
       }
     } catch (e) {
-      throw Exception('$fileName: ${e.toString()}');
+      setState(() {
+        _isLoading = false;
+      });
+      _setTemporaryStatusMessage(
+          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          isError: true);
     }
   }
 
-  // 파일 미리보기 화면 (여러 파일 지원)
+  // 파일 미리보기 화면 (서비스 결과 사용)
   Widget _buildFilePreviewView() {
     return SizedBox(
-      height: 600, // 고정 높이로 다이얼로그 크기 변화 방지
+      height: 600,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -626,7 +556,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               const SizedBox(width: 12),
               Text(
                 AddVocabularyStrings.previewTitleWithCount(
-                    _selectedFileNames.length),
+                    _importResults.length),
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -660,8 +590,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                         color: Color(0xFF6B8E23), size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      AddVocabularyStrings.selectedFiles(
-                          _selectedFileNames.length),
+                      AddVocabularyStrings.selectedFiles(_importResults.length),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -670,7 +599,8 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                 Text(AddVocabularyStrings.totalWords(_totalWords)),
                 const SizedBox(height: 8),
                 Text(
-                  AddVocabularyStrings.fileList(_selectedFileNames.join(', ')),
+                  AddVocabularyStrings.fileList(
+                      _importResults.map((r) => r.fileName).join(', ')),
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
@@ -678,12 +608,11 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           ),
           const SizedBox(height: 16),
 
-          // 메인 컨텐츠 영역 (고정 높이)
+          // 메인 컨텐츠 영역
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 상태 메시지가 있으면 표시, 없으면 데이터 미리보기 표시
                 if (_statusMessage.isNotEmpty)
                   Expanded(
                     child: Container(
@@ -717,7 +646,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                       ),
                     ),
                   )
-                else if (_previewDataList.isNotEmpty) ...[
+                else if (_importResults.isNotEmpty) ...[
                   Text(
                     AddVocabularyStrings.dataPreview,
                     style: const TextStyle(
@@ -727,12 +656,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
-                        children:
-                            _selectedFileNames.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final fileName = entry.value;
-                          final previewData = _previewDataList[index];
-
+                        children: _importResults.map((result) {
                           return Container(
                             width: double.infinity,
                             margin: const EdgeInsets.only(bottom: 12),
@@ -746,14 +670,14 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '📄 $fileName',
+                                  '📄 ${result.fileName}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF6B8E23),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                ...previewData.take(3).map((data) {
+                                ...result.previewData.take(3).map((data) {
                                   return Padding(
                                     padding:
                                         const EdgeInsets.symmetric(vertical: 2),
@@ -832,7 +756,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                           ],
                         )
                       : Text(AddVocabularyStrings.importFilesButton(
-                          _selectedFileNames.length)),
+                          _importResults.length)),
                 ),
               ),
             ],
@@ -845,34 +769,31 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
   // 미리보기 취소
   void _cancelPreview() {
     setState(() {
-      _selectedFileNames.clear();
-      _selectedFileContents.clear();
-      _previewDataList.clear();
+      _importResults.clear();
       _totalWords = 0;
       _statusMessage = '';
       _isLoading = false;
     });
   }
 
-  // 여러 파일 가져오기 확인
+  // 여러 파일 가져오기 확인 (서비스 사용)
   Future<void> _confirmImport() async {
-    if (_selectedFileContents.isNotEmpty && _selectedFileNames.isNotEmpty) {
+    if (_importResults.isNotEmpty) {
       // 중복 어휘집 확인
       List<String> duplicateFiles = [];
-      for (final fileName in _selectedFileNames) {
-        final vocabularyFile = fileName.replaceAll('.csv', '');
-        if (_hiveService.vocabularyFileExists(vocabularyFile)) {
-          duplicateFiles.add(vocabularyFile);
+      for (final result in _importResults) {
+        if (_hiveService.vocabularyFileExists(result.vocabularyFile)) {
+          duplicateFiles.add(result.vocabularyFile);
         }
       }
 
       // 중복이 있으면 사용자에게 확인
       if (duplicateFiles.isNotEmpty) {
-        final result = await _showDuplicateDialog(duplicateFiles);
-        if (result == null || result == 'cancel') {
+        final action = await _showDuplicateDialog(duplicateFiles);
+        if (action == null || action == 'cancel') {
           return; // 사용자가 취소한 경우
         }
-        await _processDuplicateAction(result, duplicateFiles);
+        await _processDuplicateAction(action, duplicateFiles);
       } else {
         await _processImport();
       }
@@ -926,7 +847,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     );
   }
 
-  // 중복 처리 액션 실행
+  // 중복 처리 액션 실행 (서비스 사용)
   Future<void> _processDuplicateAction(
       String action, List<String> duplicateFiles) async {
     setState(() {
@@ -934,19 +855,11 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     });
 
     try {
-      if (action == 'replace') {
-        // 기존 어휘집 삭제 후 새로 추가
-        for (final vocabularyFile in duplicateFiles) {
-          await _hiveService.clearVocabularyData(vocabularyFile);
-        }
-        await _processImport();
-      } else if (action == 'merge') {
-        // 기존 어휘집에 병합 (중복 ID 처리)
-        await _processImport(isMerge: true);
-      } else if (action == 'rename') {
-        // 새로운 이름으로 저장
-        await _processImport(addTimestamp: true);
-      }
+      // 서비스에서 중복 처리
+      await _importService.handleDuplicateVocabulary(
+          action, duplicateFiles, _importResults);
+
+      await _processImport(isMerge: action == 'merge');
     } catch (e) {
       setState(() {
         _statusMessage = AddVocabularyStrings.errorFileProcessing(e.toString());
@@ -955,172 +868,63 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     }
   }
 
-  // 실제 가져오기 처리
-  Future<void> _processImport(
-      {bool isMerge = false, bool addTimestamp = false}) async {
+  // 실제 가져오기 처리 (서비스 사용)
+  Future<void> _processImport({bool isMerge = false}) async {
     setState(() {
       _statusMessage = '';
     });
 
-    int totalImported = 0;
-    List<String> errorMessages = [];
+    try {
+      int totalImported = 0;
+      List<String> errorMessages = [];
 
-    // 모든 파일을 순차적으로 처리
-    for (int i = 0; i < _selectedFileContents.length; i++) {
-      try {
-        final content = _selectedFileContents[i];
-        String fileName = _selectedFileNames[i];
-
-        // 타임스탬프 추가하는 경우
-        if (addTimestamp) {
-          final timestamp = DateTime.now().millisecondsSinceEpoch;
-          fileName = fileName.replaceAll('.csv', '_$timestamp.csv');
+      // 모든 결과의 단어들을 서비스를 통해 저장
+      for (final result in _importResults) {
+        try {
+          final imported = await _importService.importVocabularyData(
+            result.words,
+            isMerge: isMerge,
+          );
+          totalImported += imported;
+        } catch (e) {
+          errorMessages.add('${result.fileName}: ${e.toString()}');
         }
-
-        final imported =
-            await _processFileContent(content, fileName, isMerge: isMerge);
-        totalImported += imported;
-      } catch (e) {
-        errorMessages.add('${_selectedFileNames[i]}: ${e.toString()}');
       }
-    }
 
-    setState(() {
-      if (errorMessages.isNotEmpty) {
-        _statusMessage = AddVocabularyStrings.partialErrorMessage(
-            errorMessages.join('\n'), totalImported);
-        _isLoading = false;
-      } else {
-        // 성공한 경우 다이얼로그에서 직접 SnackBar 호출 (테스트)
-        _isLoading = false;
+      setState(() {
+        if (errorMessages.isNotEmpty) {
+          _statusMessage = AddVocabularyStrings.partialErrorMessage(
+              errorMessages.join('\n'), totalImported);
+          _isLoading = false;
+        } else {
+          _isLoading = false;
 
-        // 다이얼로그에서 SnackBar 호출
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AddVocabularyStrings.vocabAddedSuccess),
-            backgroundColor: const Color(0xFF6B8E23),
-            duration: const Duration(seconds: 2),
-          ),
-        );
+          // 성공 시 SnackBar 표시
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AddVocabularyStrings.vocabAddedSuccess),
+              backgroundColor: const Color(0xFF6B8E23),
+              duration: const Duration(seconds: 2),
+            ),
+          );
 
-        Navigator.of(context).pop(true);
-      }
-    });
-
-    // 에러가 있는 경우만 2초 후 다이얼로그 닫기
-    if (errorMessages.isNotEmpty) {
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
           Navigator.of(context).pop(true);
         }
       });
-    }
-  }
 
-  Future<int> _processFileContent(String content, String fileName,
-      {bool isMerge = false}) async {
-    // CSV 파싱 (매우 간단한 버전)
-    List<String> lines = content.split('\n');
-    if (lines.isEmpty) {
-      throw Exception(AddVocabularyStrings.errorEmptyFile);
-    }
-
-    // 헤더 파싱
-    List<String> headers =
-        lines[0].split(',').map((h) => h.trim().replaceAll('"', '')).toList();
-
-    // 필수 컬럼 확인
-    if (!headers.contains('TargetVoca') || !headers.contains('ReferenceVoca')) {
-      throw Exception(AddVocabularyStrings.errorMissingRequiredColumns);
-    }
-
-    // 데이터 파싱 및 저장
-    List<VocabularyWord> words = [];
-    String vocabularyFile = fileName.replaceAll('.csv', '');
-
-    for (int i = 1; i < lines.length; i++) {
-      String line = lines[i].trim();
-      if (line.isEmpty) continue;
-
-      // 간단한 CSV 파싱 (따옴표 처리 포함)
-      List<String> values = _parseCSVLine(line);
-      if (values.length < 2) continue; // 최소한 TargetVoca, ReferenceVoca는 있어야 함
-
-      Map<String, String> rowData = {};
-      for (int j = 0; j < headers.length && j < values.length; j++) {
-        rowData[headers[j]] = values[j];
+      // 에러가 있는 경우만 2초 후 다이얼로그 닫기
+      if (errorMessages.isNotEmpty) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            Navigator.of(context).pop(true);
+          }
+        });
       }
-
-      // 필수 필드 확인
-      if (rowData['TargetVoca']?.isEmpty != false ||
-          rowData['ReferenceVoca']?.isEmpty != false) {
-        continue;
-      }
-
-      // 병합 모드에서는 기존 ID와 충돌하지 않도록 타임스탬프 추가
-      final wordId = isMerge
-          ? '${vocabularyFile}_${DateTime.now().millisecondsSinceEpoch}_${i}_merge'
-          : '${vocabularyFile}_${DateTime.now().millisecondsSinceEpoch}_$i';
-
-      VocabularyWord word = VocabularyWord(
-        id: wordId,
-        vocabularyFile: vocabularyFile,
-        pos: rowData['POS']?.isEmpty == true ? null : rowData['POS'],
-        type: rowData['Type']?.isEmpty == true ? null : rowData['Type'],
-        targetVoca: rowData['TargetVoca']!,
-        targetPronunciation: rowData['TargetPronunciation']?.isEmpty == true
-            ? null
-            : rowData['TargetPronunciation'],
-        referenceVoca: rowData['ReferenceVoca']!,
-        targetDesc: rowData['TargetDesc']?.isEmpty == true
-            ? null
-            : rowData['TargetDesc'],
-        referenceDesc: rowData['ReferenceDesc']?.isEmpty == true
-            ? null
-            : rowData['ReferenceDesc'],
-        targetEx:
-            rowData['TargetEx']?.isEmpty == true ? null : rowData['TargetEx'],
-        referenceEx: rowData['ReferenceEx']?.isEmpty == true
-            ? null
-            : rowData['ReferenceEx'],
-        importedDate: DateTime.now(),
-      );
-
-      words.add(word);
+    } catch (e) {
+      setState(() {
+        _statusMessage = AddVocabularyStrings.errorFileProcessing(e.toString());
+        _isLoading = false;
+      });
     }
-
-    if (words.isEmpty) {
-      throw Exception(AddVocabularyStrings.errorNoValidData);
-    }
-
-    // Hive에 저장
-    for (VocabularyWord word in words) {
-      await _hiveService.addVocabularyWord(word);
-    }
-
-    return words.length;
-  }
-
-  // 간단한 CSV 라인 파싱 (따옴표 처리)
-  List<String> _parseCSVLine(String line) {
-    List<String> result = [];
-    bool inQuotes = false;
-    String currentField = '';
-
-    for (int i = 0; i < line.length; i++) {
-      String char = line[i];
-
-      if (char == '"') {
-        inQuotes = !inQuotes;
-      } else if (char == ',' && !inQuotes) {
-        result.add(currentField.trim());
-        currentField = '';
-      } else {
-        currentField += char;
-      }
-    }
-
-    result.add(currentField.trim());
-    return result;
   }
 }
