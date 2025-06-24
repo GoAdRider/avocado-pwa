@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/app_layout.dart';
 import '../models/vocabulary_word.dart';
-import '../models/favorite.dart';
+
 import '../utils/strings/study_strings.dart';
 import '../utils/language_provider.dart';
 import '../services/study_service.dart';
@@ -31,10 +31,15 @@ class _StudyScreenState extends State<StudyScreen> {
   late StudySession _session;
   final FocusNode _focusNode = FocusNode();
 
+  // 학습 세션 추적을 위한 변수들
+  String? _sessionId;
+  DateTime? _sessionStartTime;
+
   @override
   void initState() {
     super.initState();
     _initializeSession();
+    _startSessionTracking();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -42,8 +47,41 @@ class _StudyScreenState extends State<StudyScreen> {
 
   @override
   void dispose() {
+    _endSessionTracking(); // 세션 종료 처리
     _focusNode.dispose();
     super.dispose();
+  }
+
+  /// 학습 세션 추적 시작
+  void _startSessionTracking() async {
+    try {
+      _sessionStartTime = DateTime.now();
+      _sessionId = await StudyService.instance.startStudySession(
+        words: widget.words,
+        studyMode: 'card',
+        vocabularyFiles: widget.vocabularyFiles,
+      );
+    } catch (e) {
+      print('세션 추적 시작 실패: $e');
+    }
+  }
+
+  /// 학습 세션 추적 종료
+  void _endSessionTracking() async {
+    if (_sessionId != null && _sessionStartTime != null) {
+      try {
+        await StudyService.instance.completeStudySessionEnhanced(
+          studiedWords: _session.words,
+          studyMode: 'card',
+          vocabularyFiles: widget.vocabularyFiles,
+          sessionId: _sessionId,
+          sessionStart: _sessionStartTime,
+          sessionEnd: DateTime.now(),
+        );
+      } catch (e) {
+        print('세션 추적 종료 실패: $e');
+      }
+    }
   }
 
   void _initializeSession() {
@@ -257,40 +295,46 @@ class _StudyScreenState extends State<StudyScreen> {
     Navigator.of(context).pop();
   }
 
-  void _showCompletionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.celebration, color: Colors.orange),
-              const SizedBox(width: 8),
-              Text(StudyStrings.congratulations),
+  void _showCompletionDialog() async {
+    // 세션 완료 처리
+    _endSessionTracking();
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.celebration, color: Colors.orange),
+                const SizedBox(width: 8),
+                Text(StudyStrings.congratulations),
+              ],
+            ),
+            content: Text(StudyStrings.studyCompleted),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                  Navigator.of(context).pop(); // 학습 화면 닫기
+                },
+                child: Text(StudyStrings.returnToHome),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // 다이얼로그 닫기
+                  _initializeSession(); // 세션 초기화
+                  _startSessionTracking(); // 새 세션 시작
+                  setState(() {}); // 화면 새로고침
+                },
+                child: Text(StudyStrings.continueStudy),
+              ),
             ],
-          ),
-          content: Text(StudyStrings.studyCompleted),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                Navigator.of(context).pop(); // 학습 화면 닫기
-              },
-              child: Text(StudyStrings.returnToHome),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // 다이얼로그 닫기
-                _initializeSession(); // 세션 초기화
-                setState(() {}); // 화면 새로고침
-              },
-              child: Text(StudyStrings.continueStudy),
-            ),
-          ],
-        );
-      },
-    );
+          );
+        },
+      );
+    }
   }
 
   String _getModeTitle() {
@@ -418,22 +462,7 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   Color _getModeColor() {
-    switch (_session.mode) {
-      case StudyMode.cardStudy:
-        return Colors.blue[700]!;
-      case StudyMode.favoriteReview:
-        return Colors.orange[700]!;
-      case StudyMode.wrongWordsStudy:
-        return Colors.red[700]!;
-      case StudyMode.urgentReview:
-        return Colors.red[800]!;
-      case StudyMode.recommendedReview:
-        return Colors.amber[700]!;
-      case StudyMode.leisureReview:
-        return Colors.green[700]!;
-      case StudyMode.forgettingRisk:
-        return Colors.red[900]!;
-    }
+    return StudyService.instance.getStudyModeColor(_session.mode);
   }
 
   // 학습 카드 위젯 구현

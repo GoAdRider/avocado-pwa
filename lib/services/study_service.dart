@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import '../models/vocabulary_word.dart';
 import '../models/favorite.dart';
 import '../models/study_record.dart';
@@ -168,5 +169,146 @@ class StudyService {
   double calculateAccuracy(int correctCount, int totalAttempts) {
     if (totalAttempts == 0) return 0.0;
     return correctCount / totalAttempts;
+  }
+
+  /// 학습 세션 시작 기록
+  Future<String> startStudySession({
+    required List<VocabularyWord> words,
+    required String studyMode,
+    required List<String> vocabularyFiles,
+  }) async {
+    final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
+    final sessionStart = DateTime.now();
+
+    // 세션 시작 이벤트 기록 (필요시)
+    // 향후 세션별 통계를 위해 사용할 수 있음
+
+    return sessionId;
+  }
+
+  /// 학습 활동 기록 (카드 뒤집기, 이동 등)
+  Future<void> recordStudyActivity({
+    required String wordId,
+    required String vocabularyFile,
+    required String activityType, // 'flip', 'next', 'previous', 'view'
+    String? sessionId,
+    Map<String, dynamic>? metadata,
+  }) async {
+    try {
+      // 현재는 간단한 로깅만 수행
+      // 향후 상세한 학습 패턴 분석을 위해 확장 가능
+      print('Study Activity: $activityType for word $wordId');
+
+      // 필요시 StudyRecord로 기록
+      // await recordStudySession(
+      //   wordId: wordId,
+      //   vocabularyFile: vocabularyFile,
+      //   studyMode: 'card',
+      //   isCorrect: true, // 활동 자체는 성공으로 간주
+      //   sessionStart: metadata?['sessionStart'],
+      //   sessionEnd: DateTime.now(),
+      // );
+    } catch (e) {
+      print('학습 활동 기록 실패: $e');
+    }
+  }
+
+  /// 학습 세션 완료 처리 (향상된 버전)
+  Future<Map<String, dynamic>> completeStudySessionEnhanced({
+    required List<VocabularyWord> studiedWords,
+    required String studyMode,
+    required List<String> vocabularyFiles,
+    String? sessionId,
+    DateTime? sessionStart,
+    DateTime? sessionEnd,
+    Map<String, int>? activityCounts, // 뒤집기, 이동 등 활동 통계
+  }) async {
+    try {
+      final endTime = sessionEnd ?? DateTime.now();
+      final startTime =
+          sessionStart ?? endTime.subtract(const Duration(minutes: 10));
+      final sessionDuration = endTime.difference(startTime);
+
+      // 세션 완료 기록
+      final sessionRecord = StudyRecord(
+        id: '${sessionId ?? DateTime.now().millisecondsSinceEpoch}_session',
+        wordId: 'session_complete',
+        vocabularyFile: vocabularyFiles.join(','),
+        studyDate: endTime,
+        studyMode: studyMode,
+        isCorrect: true,
+        sessionStart: startTime,
+        sessionEnd: endTime,
+        hintsUsed: 0,
+      );
+
+      await _hiveService.addStudyRecord(sessionRecord);
+
+      // 업적 시스템 업데이트
+      await _updateAchievements(studiedWords.length, studiedWords.length);
+
+      // 세션 통계 반환
+      return {
+        'sessionId': sessionId,
+        'duration': sessionDuration.inMinutes,
+        'wordsStudied': studiedWords.length,
+        'vocabulariesUsed': vocabularyFiles.length,
+        'activityCounts': activityCounts ?? {},
+        'completedAt': endTime,
+      };
+    } catch (e) {
+      throw Exception('학습 세션 완료 처리 중 오류가 발생했습니다: $e');
+    }
+  }
+
+  /// 학습 모드별 색상 가져오기 (UI 로직을 서비스로 이동)
+  Color getStudyModeColor(StudyMode mode) {
+    switch (mode) {
+      case StudyMode.cardStudy:
+        return const Color(0xFF1976D2); // Colors.blue[700]
+      case StudyMode.favoriteReview:
+        return const Color(0xFFF57C00); // Colors.orange[700]
+      case StudyMode.wrongWordsStudy:
+        return const Color(0xFFD32F2F); // Colors.red[700]
+      case StudyMode.urgentReview:
+        return const Color(0xFFC62828); // Colors.red[800]
+      case StudyMode.recommendedReview:
+        return const Color(0xFFFFA000); // Colors.amber[700]
+      case StudyMode.leisureReview:
+        return const Color(0xFF388E3C); // Colors.green[700]
+      case StudyMode.forgettingRisk:
+        return const Color(0xFFB71C1C); // Colors.red[900]
+    }
+  }
+
+  /// 학습 성과 요약 생성
+  Map<String, dynamic> generateStudySessionSummary({
+    required List<VocabularyWord> words,
+    required String studyMode,
+    DateTime? sessionStart,
+    DateTime? sessionEnd,
+  }) {
+    final totalWords = words.length;
+    final favoriteWords = words.where((word) => word.isFavorite).length;
+    final wrongWords = words.where((word) => word.wrongCount > 0).length;
+    final totalWrongCount =
+        words.fold<int>(0, (sum, word) => sum + word.wrongCount);
+
+    final sessionDuration = sessionEnd != null && sessionStart != null
+        ? sessionEnd.difference(sessionStart)
+        : null;
+
+    return {
+      'totalWords': totalWords,
+      'favoriteWords': favoriteWords,
+      'wrongWords': wrongWords,
+      'totalWrongCount': totalWrongCount,
+      'sessionDuration': sessionDuration?.inMinutes,
+      'studyMode': studyMode,
+      'completionRate': totalWords > 0 ? 100.0 : 0.0,
+      'efficiency': sessionDuration != null && sessionDuration.inMinutes > 0
+          ? totalWords / sessionDuration.inMinutes
+          : null,
+    };
   }
 }
