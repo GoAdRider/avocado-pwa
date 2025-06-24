@@ -137,48 +137,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  /// 품사 필터 변경 시 유효하지 않은 타입 필터들 제거
-  void _cleanupInvalidTypeFilters() {
-    if (_selectedVocabFiles.isEmpty || _selectedPOSFilters.isEmpty) return;
-
-    final selectedFiles = _selectedVocabFiles.toList();
-    final selectedPosValues =
-        _selectedPOSFilters.map((filter) => filter.split('(')[0]).toList();
-
-    // 현재 선택된 품사에 대한 유효한 타입들 계산
-    final validTypeCounts = _filterService.getTypeCountsWithPositionFilter(
-      selectedFiles,
-      selectedPosValues,
-    );
-
-    // 개수가 0인 타입 필터들 제거
-    _selectedTypeFilters.removeWhere((typeFilter) {
-      final typeName = typeFilter.split('(')[0];
-      return (validTypeCounts[typeName] ?? 0) == 0;
-    });
-  }
-
-  /// 타입 필터 변경 시 유효하지 않은 품사 필터들 제거
-  void _cleanupInvalidPositionFilters() {
-    if (_selectedVocabFiles.isEmpty || _selectedTypeFilters.isEmpty) return;
-
-    final selectedFiles = _selectedVocabFiles.toList();
-    final selectedTypeValues =
-        _selectedTypeFilters.map((filter) => filter.split('(')[0]).toList();
-
-    // 현재 선택된 타입에 대한 유효한 품사들 계산
-    final validPositionCounts = _filterService.getPositionCountsWithTypeFilter(
-      selectedFiles,
-      selectedTypeValues,
-    );
-
-    // 개수가 0인 품사 필터들 제거
-    _selectedPOSFilters.removeWhere((posFilter) {
-      final posName = posFilter.split('(')[0];
-      return (validPositionCounts[posName] ?? 0) == 0;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     // LanguageProvider를 통해 언어 변경 감지
@@ -1262,13 +1220,21 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedPOSFilters,
           (filter) {
             setState(() {
-              if (_selectedPOSFilters.contains(filter)) {
-                _selectedPOSFilters.remove(filter);
+              final filterName = filter.split('(')[0];
+
+              // 같은 이름의 기존 필터 찾기
+              final existingFilter = _selectedPOSFilters.firstWhere(
+                (selected) => selected.split('(')[0] == filterName,
+                orElse: () => '',
+              );
+
+              if (existingFilter.isNotEmpty) {
+                // 기존 필터가 있으면 제거 (토글 OFF)
+                _selectedPOSFilters.remove(existingFilter);
               } else {
+                // 기존 필터가 없으면 새로 추가 (토글 ON)
                 _selectedPOSFilters.add(filter);
               }
-              // 품사 필터 변경 시 더 이상 유효하지 않은 타입 필터들 제거
-              _cleanupInvalidTypeFilters();
             });
           },
         ),
@@ -1280,13 +1246,21 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectedTypeFilters,
           (filter) {
             setState(() {
-              if (_selectedTypeFilters.contains(filter)) {
-                _selectedTypeFilters.remove(filter);
+              final filterName = filter.split('(')[0];
+
+              // 같은 이름의 기존 필터 찾기
+              final existingFilter = _selectedTypeFilters.firstWhere(
+                (selected) => selected.split('(')[0] == filterName,
+                orElse: () => '',
+              );
+
+              if (existingFilter.isNotEmpty) {
+                // 기존 필터가 있으면 제거 (토글 OFF)
+                _selectedTypeFilters.remove(existingFilter);
               } else {
+                // 기존 필터가 없으면 새로 추가 (토글 ON)
                 _selectedTypeFilters.add(filter);
               }
-              // 타입 필터 변경 시 더 이상 유효하지 않은 품사 필터들 제거
-              _cleanupInvalidPositionFilters();
             });
           },
         ),
@@ -1414,7 +1388,13 @@ class _HomeScreenState extends State<HomeScreen> {
           spacing: 8,
           runSpacing: 8,
           children: filters.map((filter) {
-            final isSelected = selectedFilters.contains(filter);
+            // 순수 필터 이름 추출 (개수 괄호 제거)
+            final filterName = filter.split('(')[0];
+
+            // 선택된 필터 중에서 같은 이름이 있는지 확인
+            final isSelected = selectedFilters
+                .any((selected) => selected.split('(')[0] == filterName);
+
             return InkWell(
               onTap: () => onFilterTap(filter),
               onHover: (isHovering) {
@@ -1462,6 +1442,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontSize: 12, fontWeight: FontWeight.w500),
                 ),
                 ...selectedFilters.map((filter) {
+                  // 순수 필터 이름만 추출 (개수 괄호 제거)
+                  final filterName = filter.split('(')[0];
+
                   return Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1473,7 +1456,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '#$filter',
+                          '#$filterName',
                           style: const TextStyle(
                               fontSize: 10, color: Colors.white),
                         ),
