@@ -132,7 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// 어휘집 목록 불러오기
   void _loadVocabularyFiles() {
-    _vocabularyFiles = _vocabularyService.getAllVocabularyFileInfos();
+    setState(() {
+      _vocabularyFiles = _vocabularyService.getAllVocabularyFileInfos();
+    });
   }
 
   /// 품사 필터 변경 시 유효하지 않은 타입 필터들 제거
@@ -1063,58 +1065,49 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildVocabularyCards() {
     return Column(
       children: [
-        // 어휘집이 없을 때 메시지
-        if (_vocabularyFiles.isEmpty) ...[
-          Row(
-            children: [
-              _buildAddVocabCard(),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(
-                    HomeStrings.noVocabMessage,
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        // 어휘집이 없을 때와 있을 때 모두 동일한 GridView 구조 사용
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 6, // 6열 그리드
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.2, // 높이를 더 줄임 (최대한 컴팩트하게)
           ),
-        ] else ...[
-          // 어휘집 카드들을 6열 그리드로 표시
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 6, // 6열 그리드
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 1.2, // 높이를 더 줄임 (최대한 컴팩트하게)
-            ),
-            itemCount: _vocabularyFiles.length + 1, // +1 for add button
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                // 첫 번째는 항상 추가 버튼
-                return _buildAddVocabCard();
-              } else {
-                // 나머지는 어휘집 카드들
-                final vocabInfo = _vocabularyFiles[index - 1];
-                final isSelected =
-                    _selectedVocabFiles.contains(vocabInfo.fileName);
+          itemCount: _vocabularyFiles.length + 1, // +1 for add button
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              // 첫 번째는 항상 추가 버튼
+              return _buildAddVocabCard();
+            } else {
+              // 나머지는 어휘집 카드들
+              final vocabInfo = _vocabularyFiles[index - 1];
+              final isSelected =
+                  _selectedVocabFiles.contains(vocabInfo.fileName);
 
-                return VocabularyCard(
-                  vocabularyInfo: vocabInfo,
-                  isSelected: isSelected,
-                  showSelection: true,
-                  onTap: () => _onVocabularyCardTap(vocabInfo.fileName),
-                  onLongPress: () =>
-                      _onVocabularyCardLongPress(vocabInfo.fileName),
-                );
-              }
-            },
+              return VocabularyCard(
+                vocabularyInfo: vocabInfo,
+                isSelected: isSelected,
+                showSelection: true,
+                onTap: () => _onVocabularyCardTap(vocabInfo.fileName),
+                onLongPress: () =>
+                    _onVocabularyCardLongPress(vocabInfo.fileName),
+              );
+            }
+          },
+        ),
+        // 어휘집이 없을 때만 안내 메시지 표시
+        if (_vocabularyFiles.isEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            HomeStrings.noVocabMessage,
+            style: const TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ],
