@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/app_layout.dart';
 import '../models/vocabulary_word.dart';
+import '../models/favorite.dart';
 import '../utils/strings/study_strings.dart';
 import '../utils/language_provider.dart';
+import '../services/study_service.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
 class StudyScreen extends StatefulWidget {
@@ -60,9 +62,15 @@ class _StudyScreenState extends State<StudyScreen> {
     }
     // TargetVoca 모드는 기본값(CardSide.front) 사용
 
+    // 단어들의 즐겨찾기 상태를 실제 데이터베이스와 동기화
+    final wordsWithFavoriteStatus = widget.words.map((word) {
+      final isFavorite = StudyService.instance.isFavorite(word.id);
+      return word.copyWith(isFavorite: isFavorite);
+    }).toList();
+
     _session = StudySession(
       mode: widget.mode,
-      words: List.from(widget.words),
+      words: wordsWithFavoriteStatus,
       vocabularyFiles: List.from(widget.vocabularyFiles),
       currentSide: initialSide,
     );
@@ -197,31 +205,46 @@ class _StudyScreenState extends State<StudyScreen> {
     );
   }
 
-  void _toggleFavorite() {
+  void _toggleFavorite() async {
     final currentWord = _session.currentWord;
     if (currentWord == null) return;
 
-    // 실제 구현에서는 Hive 데이터베이스 업데이트
-    final updatedWord = currentWord.copyWith(
-      isFavorite: !currentWord.isFavorite,
-    );
+    try {
+      // StudyService를 통해 즐겨찾기 토글
+      final isNowFavorite =
+          await StudyService.instance.toggleFavorite(currentWord);
 
-    final updatedWords = List<VocabularyWord>.from(_session.words);
-    updatedWords[_session.currentIndex] = updatedWord;
+      // 메모리상 단어 객체 업데이트
+      final updatedWord = currentWord.copyWith(
+        isFavorite: isNowFavorite,
+      );
 
-    _updateSession(_session.copyWith(words: updatedWords));
+      final updatedWords = List<VocabularyWord>.from(_session.words);
+      updatedWords[_session.currentIndex] = updatedWord;
 
-    // 즐겨찾기 토글 피드백
-    final message = updatedWord.isFavorite
-        ? StudyStrings.favoriteAdded
-        : StudyStrings.favoriteRemoved;
+      _updateSession(_session.copyWith(words: updatedWords));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+      // 즐겨찾기 토글 피드백
+      final message = isNowFavorite
+          ? StudyStrings.favoriteAdded
+          : StudyStrings.favoriteRemoved;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      // 오류 발생 시 사용자에게 알림
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('즐겨찾기 저장 중 오류가 발생했습니다: $e'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _toggleDetails() {
@@ -534,11 +557,10 @@ class _StudyScreenState extends State<StudyScreen> {
                   : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              word.isFavorite
-                  ? StudyStrings.favoriteFilled
-                  : StudyStrings.favoriteEmpty,
-              style: const TextStyle(fontSize: 20),
+            child: Icon(
+              word.isFavorite ? Icons.star : Icons.star_border,
+              color: word.isFavorite ? Colors.orange[600] : Colors.grey[600],
+              size: 24,
             ),
           ),
         ),
