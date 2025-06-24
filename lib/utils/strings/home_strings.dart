@@ -200,6 +200,14 @@ class HomeStrings {
       'preview_review_desc': '시간 날 때 해보세요',
       'forgotten_review_title': '망각 위험',
       'forgotten_review_desc': '기억에서 사라지고 있어요!',
+
+      // 학습 시작 관련 다이얼로그
+      'no_vocab_selected_title': '어휘집이 선택되지 않음',
+      'no_vocab_selected_message': '학습을 시작하려면 먼저 어휘집을 선택해주세요.',
+      'no_words_found_title': '학습할 단어가 없음',
+      'no_words_found_message': '선택된 조건에 해당하는 단어가 없습니다.\n필터 설정을 확인해주세요.',
+      'no_favorites_found_title': '즐겨찾기 단어가 없음',
+      'no_favorites_found_message': '즐겨찾기로 등록된 단어가 없습니다.\n먼저 단어를 즐겨찾기에 추가해주세요.',
     },
     'EN': {
       // 홈화면 섹션 제목들
@@ -398,11 +406,22 @@ class HomeStrings {
       'urgent_review_title': 'Urgent Review',
       'urgent_review_desc': 'Will disappear from memory if missed!',
       'recommended_review_title': 'Recommended Review',
-      'recommended_review_desc': 'Memory boost if done today!',
-      'preview_review_title': 'Preview Review',
-      'preview_review_desc': 'Do it when you have time',
+      'recommended_review_desc': 'Perfect timing for memory boost!',
+      'preview_review_title': 'Optional Review',
+      'preview_review_desc': 'When you have time',
       'forgotten_review_title': 'Forgetting Risk',
-      'forgotten_review_desc': 'Disappearing from memory!',
+      'forgotten_review_desc': 'Fading from memory!',
+
+      // 학습 시작 관련 다이얼로그
+      'no_vocab_selected_title': 'No Vocabulary Selected',
+      'no_vocab_selected_message':
+          'Please select a vocabulary set first to start studying.',
+      'no_words_found_title': 'No Words Found',
+      'no_words_found_message':
+          'No words match the selected criteria.\nPlease check your filter settings.',
+      'no_favorites_found_title': 'No Favorite Words',
+      'no_favorites_found_message':
+          'No words are marked as favorites.\nPlease add words to favorites first.',
     },
   };
 
@@ -620,4 +639,13 @@ class HomeStrings {
   static String get previewReviewDesc => get('preview_review_desc');
   static String get forgottenReviewTitle => get('forgotten_review_title');
   static String get forgottenReviewDesc => get('forgotten_review_desc');
+
+  // 학습 시작 관련 다이얼로그
+  static String get noVocabSelectedTitle => get('no_vocab_selected_title');
+  static String get noVocabSelectedMessage => get('no_vocab_selected_message');
+  static String get noWordsFoundTitle => get('no_words_found_title');
+  static String get noWordsFoundMessage => get('no_words_found_message');
+  static String get noFavoritesFoundTitle => get('no_favorites_found_title');
+  static String get noFavoritesFoundMessage =>
+      get('no_favorites_found_message');
 }

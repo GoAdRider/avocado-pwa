@@ -36,6 +36,11 @@ class BaseStrings {
       'select_all_filter': '모두선택',
       'deselect_all_filter': '모두해제',
       'start': '시작하기',
+
+      // 구현 상태 메시지
+      'coming_soon': '구현 예정',
+      'feature_coming_soon': '이 기능은 곧 구현될 예정입니다.',
+      'game_feature_coming_soon': '게임 기반 학습 기능이 곧 추가됩니다!',
     },
     'EN': {
       // 헤더 (모든 페이지 공통)
@@ -74,6 +79,11 @@ class BaseStrings {
       'select_all_filter': 'Select All',
       'deselect_all_filter': 'Deselect All',
       'start': 'Start',
+
+      // 구현 상태 메시지
+      'coming_soon': 'Coming Soon',
+      'feature_coming_soon': 'This feature will be implemented soon.',
+      'game_feature_coming_soon': 'Game-based learning features coming soon!',
     },
   };
 
@@ -135,4 +145,9 @@ class BaseStrings {
   static String get selectAllFilter => get('select_all_filter');
   static String get deselectAllFilter => get('deselect_all_filter');
   static String get start => get('start');
+
+  // 구현 상태 메시지
+  static String get comingSoon => get('coming_soon');
+  static String get featureComingSoon => get('feature_coming_soon');
+  static String get gameFeatureComingSoon => get('game_feature_coming_soon');
 }

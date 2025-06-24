@@ -3,18 +3,22 @@ import 'package:flutter/services.dart';
 import '../widgets/app_layout.dart';
 import '../models/vocabulary_word.dart';
 import '../utils/strings/study_strings.dart';
+import '../utils/language_provider.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
 class StudyScreen extends StatefulWidget {
   final StudyMode mode;
   final List<VocabularyWord> words;
   final List<String> vocabularyFiles;
+  final String
+      studyModePreference; // 위주 학습 설정: 'TargetVoca', 'ReferenceVoca', 'Random'
 
   const StudyScreen({
     super.key,
     required this.mode,
     required this.words,
     required this.vocabularyFiles,
+    this.studyModePreference = 'TargetVoca', // 기본값
   });
 
   @override
@@ -41,10 +45,26 @@ class _StudyScreenState extends State<StudyScreen> {
   }
 
   void _initializeSession() {
+    // 위주 학습 설정에 따라 초기 카드 면 결정
+    CardSide initialSide = CardSide.front;
+
+    if (widget.studyModePreference == 'ReferenceVoca') {
+      // ReferenceVoca 모드: ReferenceVoca부터 시작
+      initialSide = CardSide.back;
+    } else if (widget.studyModePreference == 'Random') {
+      // Random 모드: 무작위로 시작면 결정
+      initialSide = [
+        CardSide.front,
+        CardSide.back
+      ][DateTime.now().millisecondsSinceEpoch % 2];
+    }
+    // TargetVoca 모드는 기본값(CardSide.front) 사용
+
     _session = StudySession(
       mode: widget.mode,
       words: List.from(widget.words),
       vocabularyFiles: List.from(widget.vocabularyFiles),
+      currentSide: initialSide,
     );
   }
 
@@ -88,9 +108,22 @@ class _StudyScreenState extends State<StudyScreen> {
   // 네비게이션 메서드들
   void _goToPrevious() {
     if (_session.canGoPrevious) {
+      // 위주 학습 설정에 따라 이전 카드의 시작면 결정
+      CardSide prevSide = CardSide.front;
+
+      if (widget.studyModePreference == 'ReferenceVoca') {
+        prevSide = CardSide.back;
+      } else if (widget.studyModePreference == 'Random') {
+        // Random 모드: 매번 무작위로 시작면 결정
+        prevSide = [
+          CardSide.front,
+          CardSide.back
+        ][DateTime.now().millisecondsSinceEpoch % 2];
+      }
+
       _updateSession(_session.copyWith(
         currentIndex: _session.currentIndex - 1,
-        currentSide: CardSide.front,
+        currentSide: prevSide,
         showDetails: false,
       ));
     }
@@ -98,9 +131,22 @@ class _StudyScreenState extends State<StudyScreen> {
 
   void _goToNext() {
     if (_session.canGoNext) {
+      // 위주 학습 설정에 따라 다음 카드의 시작면 결정
+      CardSide nextSide = CardSide.front;
+
+      if (widget.studyModePreference == 'ReferenceVoca') {
+        nextSide = CardSide.back;
+      } else if (widget.studyModePreference == 'Random') {
+        // Random 모드: 매번 무작위로 시작면 결정
+        nextSide = [
+          CardSide.front,
+          CardSide.back
+        ][DateTime.now().millisecondsSinceEpoch % 2];
+      }
+
       _updateSession(_session.copyWith(
         currentIndex: _session.currentIndex + 1,
-        currentSide: CardSide.front,
+        currentSide: nextSide,
         showDetails: false,
       ));
     } else if (_session.currentIndex == _session.words.length - 1) {
@@ -122,10 +168,23 @@ class _StudyScreenState extends State<StudyScreen> {
     final shuffledWords = List<VocabularyWord>.from(_session.words);
     shuffledWords.shuffle();
 
+    // 위주 학습 설정에 따라 섞기 후 시작면 결정
+    CardSide shuffledSide = CardSide.front;
+
+    if (widget.studyModePreference == 'ReferenceVoca') {
+      shuffledSide = CardSide.back;
+    } else if (widget.studyModePreference == 'Random') {
+      // Random 모드: 무작위로 시작면 결정
+      shuffledSide = [
+        CardSide.front,
+        CardSide.back
+      ][DateTime.now().millisecondsSinceEpoch % 2];
+    }
+
     _updateSession(_session.copyWith(
       words: shuffledWords,
       currentIndex: 0,
-      currentSide: CardSide.front,
+      currentSide: shuffledSide,
       showDetails: false,
     ));
 
@@ -625,6 +684,9 @@ class _StudyScreenState extends State<StudyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // LanguageProvider를 통해 언어 변경 감지
+    LanguageProvider.of(context);
+
     if (_session.words.isEmpty) {
       return AppLayout(
         child: Center(

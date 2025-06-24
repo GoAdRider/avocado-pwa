@@ -6,8 +6,10 @@ import '../services/filter_service.dart';
 import '../utils/strings/base_strings.dart';
 import '../utils/strings/home_strings.dart';
 import '../utils/language_provider.dart';
+import '../models/vocabulary_word.dart';
 
 import 'add_vocabulary_dialog.dart';
+import 'study_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -585,19 +587,18 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleReviewTap(String reviewType) {
     switch (reviewType) {
       case 'urgent':
-        print('🔴 긴급 복습 시작 - 7개 단어');
+        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
         break;
       case 'recommended':
-        print('🟡 권장 복습 시작 - 12개 단어');
+        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
         break;
       case 'preview':
-        print('🟢 여유 복습 시작 - 5개 단어');
+        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
         break;
       case 'forgotten':
-        print('⚠️ 망각 위험 단어 구조 시작 - 7개 단어');
+        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
         break;
     }
-    // TODO: 실제 복습 화면으로 이동하는 로직 구현
   }
 
   // 최근 학습 기록
@@ -1577,7 +1578,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // 학습 방법 버튼
   Widget _buildStudyMethodButton(String text, Color color) {
     return InkWell(
-      onTap: () => print('$text 선택'),
+      onTap: () => _handleStudyMethodTap(text),
       child: Container(
         height: 80,
         decoration: BoxDecoration(
@@ -1596,6 +1597,163 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  // 학습 방법 버튼 탭 처리
+  void _handleStudyMethodTap(String methodText) {
+    // 선택된 어휘집이 있는지 확인
+    if (_selectedVocabFiles.isEmpty) {
+      _showNoVocabularySelectedDialog();
+      return;
+    }
+
+    if (methodText == HomeStrings.cardStudy) {
+      _startCardStudy();
+    } else if (methodText == HomeStrings.favoriteReview) {
+      _startFavoriteReview();
+    } else if (methodText == HomeStrings.gameStudy) {
+      _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+    } else if (methodText == HomeStrings.wrongWordStudy) {
+      _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+    }
+  }
+
+  // 구현 예정 다이얼로그
+  void _showComingSoonDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.construction, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(BaseStrings.comingSoon),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(BaseStrings.ok),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 어휘집 미선택 알림 다이얼로그
+  void _showNoVocabularySelectedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(HomeStrings.noVocabSelectedTitle),
+            ],
+          ),
+          content: Text(HomeStrings.noVocabSelectedMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(BaseStrings.ok),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 기본 단어카드 학습 시작
+  void _startCardStudy() {
+    final words = _getFilteredWordsForStudy();
+    if (words.isEmpty) {
+      _showNoWordsFoundDialog();
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StudyScreen(
+          mode: StudyMode.cardStudy,
+          words: words,
+          vocabularyFiles: _selectedVocabFiles.toList(),
+          studyModePreference: _studyMode, // 위주 학습 설정 전달
+        ),
+      ),
+    );
+  }
+
+  // 즐겨찾기 복습 시작
+  void _startFavoriteReview() {
+    final words = _getFilteredWordsForStudy(favoritesOnly: true);
+    if (words.isEmpty) {
+      _showNoWordsFoundDialog(isFavorites: true);
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StudyScreen(
+          mode: StudyMode.favoriteReview,
+          words: words,
+          vocabularyFiles: _selectedVocabFiles.toList(),
+          studyModePreference: _studyMode, // 위주 학습 설정 전달
+        ),
+      ),
+    );
+  }
+
+  // 필터링된 단어 목록 가져오기 (학습용)
+  List<VocabularyWord> _getFilteredWordsForStudy({bool favoritesOnly = false}) {
+    // FilterService를 통해 필터링된 단어들 가져오기
+    final selectedPosValues =
+        _selectedPOSFilters.map((filter) => filter.split('(')[0]).toList();
+    final selectedTypeValues =
+        _selectedTypeFilters.map((filter) => filter.split('(')[0]).toList();
+
+    return _filterService.getFilteredWords(
+      vocabularyFiles: _selectedVocabFiles.toList(),
+      posFilters: selectedPosValues.isNotEmpty ? selectedPosValues : null,
+      typeFilters: selectedTypeValues.isNotEmpty ? selectedTypeValues : null,
+      favoritesOnly: favoritesOnly,
+    );
+  }
+
+  // 단어 없음 알림 다이얼로그
+  void _showNoWordsFoundDialog({bool isFavorites = false}) {
+    final title = isFavorites
+        ? HomeStrings.noFavoritesFoundTitle
+        : HomeStrings.noWordsFoundTitle;
+    final message = isFavorites
+        ? HomeStrings.noFavoritesFoundMessage
+        : HomeStrings.noWordsFoundMessage;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.info, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(BaseStrings.ok),
+            ),
+          ],
+        );
+      },
     );
   }
 
