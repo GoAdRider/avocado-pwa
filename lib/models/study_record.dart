@@ -40,6 +40,15 @@ class StudyRecord extends HiveObject {
   @HiveField(11)
   DateTime? sessionEnd;
 
+  @HiveField(12)
+  List<String>? posFilters; // 품사 필터
+
+  @HiveField(13)
+  List<String>? typeFilters; // 어휘 타입 필터
+
+  @HiveField(14)
+  String? targetMode; // 위주 학습 설정 ('TargetVoca', 'ReferenceVoca', 'Random')
+
   StudyRecord({
     required this.id,
     required this.wordId,
@@ -53,6 +62,9 @@ class StudyRecord extends HiveObject {
     this.hintsUsed = 0,
     this.sessionStart,
     this.sessionEnd,
+    this.posFilters,
+    this.typeFilters,
+    this.targetMode,
   }) : studyDate = studyDate ?? DateTime.now();
 
   StudyRecord copyWith({
@@ -68,6 +80,9 @@ class StudyRecord extends HiveObject {
     int? hintsUsed,
     DateTime? sessionStart,
     DateTime? sessionEnd,
+    List<String>? posFilters,
+    List<String>? typeFilters,
+    String? targetMode,
   }) {
     return StudyRecord(
       id: id ?? this.id,
@@ -82,6 +97,9 @@ class StudyRecord extends HiveObject {
       hintsUsed: hintsUsed ?? this.hintsUsed,
       sessionStart: sessionStart ?? this.sessionStart,
       sessionEnd: sessionEnd ?? this.sessionEnd,
+      posFilters: posFilters ?? this.posFilters,
+      typeFilters: typeFilters ?? this.typeFilters,
+      targetMode: targetMode ?? this.targetMode,
     );
   }
 
@@ -102,7 +120,7 @@ class StudyRecord extends HiveObject {
 
   @override
   String toString() {
-    return 'StudyRecord(id: $id, wordId: $wordId, vocabularyFile: $vocabularyFile, studyDate: $studyDate, studyMode: $studyMode, gameType: $gameType, isCorrect: $isCorrect, score: $score, hintType: $hintType, hintsUsed: $hintsUsed)';
+    return 'StudyRecord(id: $id, wordId: $wordId, vocabularyFile: $vocabularyFile, studyDate: $studyDate, studyMode: $studyMode, gameType: $gameType, isCorrect: $isCorrect, score: $score, hintType: $hintType, hintsUsed: $hintsUsed, posFilters: $posFilters, typeFilters: $typeFilters, targetMode: $targetMode)';
   }
 
   @override

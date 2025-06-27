@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'dart:async';
-import '../services/hive_service.dart';
-import '../services/vocabulary_import_service.dart';
-import '../utils/strings/add_vocabulary_strings.dart';
-import '../utils/strings/base_strings.dart';
+import '../../services/common/hive_service.dart';
+import '../../services/common/vocabulary_import_service.dart';
+import '../../utils/strings/add_vocabulary_strings.dart';
+import '../../utils/strings/base_strings.dart';
 
 class AddVocabularyDialog extends StatefulWidget {
   const AddVocabularyDialog({super.key});

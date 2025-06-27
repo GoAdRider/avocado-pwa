@@ -40,6 +40,8 @@ class HomeStrings {
           '선택된 어휘집: 📝{count}개 ⭐{favorites}개 ❌{wrong}개 🔢{wrongCount}회',
       'vocab_info_guide': '📖 어휘집 정보 가이드: 📝단어수 ⭐즐겨찾기 ❌틀린단어 🔢틀린횟수 📅최근학습',
       'add_new_vocab': '새로운 어휘집\n추가하기',
+      'add_new_vocabulary': '새로운 어휘집\n추가하기',
+      'selected_vocabularies': '선택된 어휘집',
       'no_vocab_message': '어휘집을 추가하시면 여기에 표시됩니다.',
 
       'filtered_words':
@@ -72,7 +74,51 @@ class HomeStrings {
       'hours_ago': '{hours}시간 전',
       'days_ago': '{days}일 전',
       'weeks_ago': '{weeks}주 전',
+      'months_ago': '{months}달 전',
       'no_recent': '없음',
+
+      // 학습 모드별 텍스트
+      'study_mode_card': '📖 단어카드',
+      'study_mode_favorites': '⭐ 즐겨찾기',
+      'study_mode_wrong_words': '❌ 틀린단어',
+      'study_mode_urgent_review': '🔴 긴급 복습',
+      'study_mode_recommended_review': '🟡 권장 복습',
+      'study_mode_leisure_review': '🟢 여유 복습',
+      'study_mode_forgetting_risk': '⚠️ 망각 위험',
+      'study_mode_smart_review': '🧠 망각곡선 기반 복습',
+
+      // 툴팁 메시지 (recent_study_service.dart용)
+      'tooltip_vocabulary': '어휘집',
+      'tooltip_word_count': '단어개수',
+      'tooltip_study_mode': '학습모드',
+      'tooltip_display_order': '표시순서',
+      'tooltip_total_sessions': '총 학습 세션',
+      'tooltip_progress': '진행도',
+      'tooltip_target_mode_target': 'TargetVoca 먼저',
+      'tooltip_target_mode_reference': 'ReferenceVoca 먼저',
+      'tooltip_target_mode_random': 'Random 모드',
+      'tooltip_all_filters': '전체단어',
+      'tooltip_pos_filter': '품사필터',
+      'tooltip_type_filter': '타입필터',
+      'tooltip_unit_count': '개',
+      'tooltip_unit_times': '회',
+      'tooltip_unit_percent': '%',
+
+      // 최근 학습 기록 빈 상태
+      'no_recent_study_title': '최근 학습 기록이 없습니다',
+      'no_recent_study_message': '학습을 시작하면 여기에 표시됩니다',
+
+      // 최근 학습 기록 관련 (RecentStudySection 용)
+      'recent_study_title': '📖 최근 학습 기록',
+      'cancel_selection': '선택 취소',
+      'select_mode': '선택',
+      'no_recent_study': '최근 학습 기록이 없습니다',
+      'start_study_to_see_records': '학습을 시작하면 여기에 표시됩니다',
+      'total_sessions': '총 학습 횟수',
+      'accuracy': '정답률',
+      'last_study_date': '마지막 학습',
+      'today': '오늘',
+      'yesterday': '어제',
 
       // 홈화면 다이얼로그
       'delete_selected_title': '선택된 기록 삭제',
@@ -126,6 +172,56 @@ class HomeStrings {
       'weekly_monthly_goal_desc': '(신규학습 + 복습 포함 총 학습 단어수)',
       'goal_unit_words': '개',
       'goal_validation_error': '목표는 1 이상의 숫자여야 합니다.',
+
+      // 어휘집 목록 섹션 (VocabularyListSection 용)
+      'vocabulary_list_title': '📚 어휘집 목록',
+      'help_title': '어휘집 관리 도움말',
+      'vocabulary_list_help': '''📚 어휘집 관리 가이드:
+
+🔹 어휘집 선택:
+• 탭하여 단일 선택
+• 길게 눌러서 다중 선택 모드 진입
+
+🔹 관리 기능:
+• ✅ 전체선택 / ❌ 전체해제
+• 🗑️ 선택된 어휘집 삭제
+• 📤 CSV 형태로 내보내기
+• 🧹 틀린횟수 초기화
+• ⭐ 즐겨찾기 초기화
+
+📊 어휘집 정보:
+• 📝 단어수: 총 단어 개수
+• ⭐ 즐겨찾기: 즐겨찾기 단어 수
+• ❌ 틀린단어: 틀린 단어 수
+• 🔢 틀린횟수: 총 틀린 횟수
+
+📁 새 어휘집 추가:
+• + 버튼으로 CSV 파일 업로드
+• 필수 컬럼: TargetVoca, ReferenceVoca''',
+      'multi_select_mode': '다중선택 모드',
+      'single_select_mode': '단일선택 모드',
+      'select_all': '전체선택',
+      'unselect_all': '전체해제',
+      'delete_button': '삭제',
+      'export_button': '내보내기',
+      'reset_wrong_counts': '틀린횟수 초기화',
+      'reset_favorites_button': '즐겨찾기 초기화',
+      'help_tooltip': '도움말',
+      'error_delete_vocabulary': '어휘집 삭제 중 오류가 발생했습니다: {error}',
+      'error_reset_wrong_counts': '틀린횟수 초기화 중 오류가 발생했습니다: {error}',
+      'error_reset_favorites': '즐겨찾기 초기화 중 오류가 발생했습니다: {error}',
+
+      // VocabularyListSection 추가 문자열들
+      'delete_confirm_title': '어휘집 삭제 확인',
+      'delete_confirm_message': '{count}개의 어휘집을 삭제하시겠습니까?',
+      'delete_success_message': '어휘집이 성공적으로 삭제되었습니다',
+      'export_success_message': 'CSV 파일로 성공적으로 내보냈습니다',
+      'reset_wrong_counts_title': '틀린횟수 초기화 확인',
+      'reset_wrong_counts_message': '{count}개 어휘집의 틀린횟수를 초기화하시겠습니까?',
+      'reset_wrong_counts_success_message': '틀린횟수가 성공적으로 초기화되었습니다',
+      'reset_favorites_success_message': '즐겨찾기가 성공적으로 초기화되었습니다',
+      'reset_button': '초기화',
+      'reset_wrong_counts_button': '틀린횟수 초기화',
 
       // 도움말 다이얼로그
       'vocab_selection_help_title': '어휘집 선택 도움말',
@@ -282,7 +378,40 @@ class HomeStrings {
       'hours_ago': '{hours}h ago',
       'days_ago': '{days}d ago',
       'weeks_ago': '{weeks}w ago',
+      'months_ago': '{months}mo ago',
       'no_recent': 'None',
+
+      // 학습 모드별 텍스트
+      'study_mode_card': '📖 Card Study',
+      'study_mode_favorites': '⭐ Favorites',
+      'study_mode_wrong_words': '❌ Wrong Words',
+      'study_mode_urgent_review': '🔴 Urgent Review',
+      'study_mode_recommended_review': '🟡 Recommended Review',
+      'study_mode_leisure_review': '🟢 Leisure Review',
+      'study_mode_forgetting_risk': '⚠️ Forgetting Risk',
+      'study_mode_smart_review': '🧠 Smart Review',
+
+      // 툴팁 메시지 (recent_study_service.dart용)
+      'tooltip_vocabulary': 'Vocabulary',
+      'tooltip_word_count': 'Word Count',
+      'tooltip_study_mode': 'Study Mode',
+      'tooltip_display_order': 'Display Order',
+      'tooltip_total_sessions': 'Total Sessions',
+      'tooltip_progress': 'Progress',
+      'tooltip_target_mode_target': 'TargetVoca First',
+      'tooltip_target_mode_reference': 'ReferenceVoca First',
+      'tooltip_target_mode_random': 'Random Mode',
+      'tooltip_all_filters': 'All Words',
+      'tooltip_pos_filter': 'POS Filter',
+      'tooltip_type_filter': 'Type Filter',
+      'tooltip_unit_count': ' words',
+      'tooltip_unit_times': ' times',
+      'tooltip_unit_percent': '%',
+
+      // 최근 학습 기록 빈 상태
+      'no_recent_study_title': 'No recent study records',
+      'no_recent_study_message':
+          'Records will appear here once you start studying',
 
       // 홈화면 다이얼로그
       'delete_selected_title': 'Delete Selected Records',
@@ -422,6 +551,70 @@ class HomeStrings {
       'no_favorites_found_title': 'No Favorite Words',
       'no_favorites_found_message':
           'No words are marked as favorites.\nPlease add words to favorites first.',
+
+      // 최근 학습 기록 관련 (RecentStudySection 용) - 영어 번역 추가
+      'recent_study_title': '📖 Recent Study Records',
+      'cancel_selection': 'Cancel Selection',
+      'select_mode': 'Select Mode',
+      'no_recent_study': 'No recent study records',
+      'start_study_to_see_records': 'Records will appear here once you start studying',
+      'total_sessions': 'Total Sessions',
+      'accuracy': 'Accuracy',
+      'last_study_date': 'Last Study Date',
+      'today': 'Today',
+      'yesterday': 'Yesterday',
+
+      // 어휘집 목록 관련 (VocabularyListSection 용) - 영어 번역 추가
+      'vocabulary_list_title': '📚 Vocabulary List',
+      'help_title': 'Vocabulary Management Help',
+      'vocabulary_list_help': '''📚 Vocabulary Management Guide:
+
+🔹 Vocabulary Selection:
+• Tap to select single vocabulary
+• Long press to enter multi-select mode
+
+🔹 Management Features:
+• ✅ Select All / ❌ Unselect All
+• 🗑️ Delete selected vocabularies
+• 📤 Export as CSV format
+• 🧹 Reset wrong counts
+• ⭐ Reset favorites
+
+📊 Vocabulary Info:
+• 📝 Words: Total word count
+• ⭐ Favorites: Favorite word count  
+• ❌ Wrong: Wrong word count
+• 🔢 Count: Total wrong count
+
+📁 Add New Vocabulary:
+• + button to upload CSV file
+• Required columns: TargetVoca, ReferenceVoca''',
+      'multi_select_mode': 'Multi Select Mode',
+      'single_select_mode': 'Single Select Mode',
+      'select_all': 'Select All',
+      'unselect_all': 'Unselect All',
+      'delete_button': 'Delete',
+      'export_button': 'Export',
+      'reset_wrong_counts': 'Reset Wrong Counts',
+      'reset_favorites_button': 'Reset Favorites',
+      'reset_wrong_counts_button': 'Reset Wrong Counts',
+      'help_tooltip': 'Help',
+      'error_delete_vocabulary': 'Error occurred while deleting vocabulary: {error}',
+      'error_reset_wrong_counts': 'Error occurred while resetting wrong counts: {error}',
+      'error_reset_favorites': 'Error occurred while resetting favorites: {error}',
+
+      // VocabularyListSection 추가 문자열들 - 영어 번역 추가
+      'delete_confirm_title': 'Confirm Vocabulary Deletion',
+      'delete_confirm_message': 'Delete {count} vocabulary sets?',
+      'delete_success_message': 'Vocabulary successfully deleted',
+      'export_success_message': 'Successfully exported as CSV file',
+      'reset_wrong_counts_title': 'Confirm Reset Wrong Counts',
+      'reset_wrong_counts_message': 'Reset wrong counts for {count} vocabulary sets?',
+      'reset_wrong_counts_success_message': 'Wrong counts successfully reset',
+      'reset_favorites_success_message': 'Favorites successfully reset',
+      'reset_button': 'Reset',
+      'selected_vocabularies': 'Selected Vocabularies',
+      'add_new_vocabulary': 'Add New\nVocabulary',
     },
   };
 
@@ -546,7 +739,57 @@ class HomeStrings {
   static String daysAgo(int days) => get('days_ago', params: {'days': days});
   static String weeksAgo(int weeks) =>
       get('weeks_ago', params: {'weeks': weeks});
+  static String monthsAgo(int months) =>
+      get('months_ago', params: {'months': months});
   static String get noRecent => get('no_recent');
+
+  // 학습 모드 텍스트
+  static String get studyModeCard => get('study_mode_card');
+  static String get studyModeFavorites => get('study_mode_favorites');
+  static String get studyModeWrongWords => get('study_mode_wrong_words');
+  static String get studyModeUrgentReview => get('study_mode_urgent_review');
+  static String get studyModeRecommendedReview =>
+      get('study_mode_recommended_review');
+  static String get studyModeLeisureReview => get('study_mode_leisure_review');
+  static String get studyModeForgettingRisk =>
+      get('study_mode_forgetting_risk');
+  static String get studyModeSmartReview => get('study_mode_smart_review');
+
+  // 툴팁 메시지
+  static String get tooltipVocabulary => get('tooltip_vocabulary');
+  static String get tooltipWordCount => get('tooltip_word_count');
+  static String get tooltipStudyMode => get('tooltip_study_mode');
+  static String get tooltipDisplayOrder => get('tooltip_display_order');
+  static String get tooltipTotalSessions => get('tooltip_total_sessions');
+  static String get tooltipProgress => get('tooltip_progress');
+  static String get tooltipTargetModeTarget =>
+      get('tooltip_target_mode_target');
+  static String get tooltipTargetModeReference =>
+      get('tooltip_target_mode_reference');
+  static String get tooltipTargetModeRandom =>
+      get('tooltip_target_mode_random');
+  static String get tooltipAllFilters => get('tooltip_all_filters');
+  static String get tooltipPosFilter => get('tooltip_pos_filter');
+  static String get tooltipTypeFilter => get('tooltip_type_filter');
+  static String get tooltipUnitCount => get('tooltip_unit_count');
+  static String get tooltipUnitTimes => get('tooltip_unit_times');
+  static String get tooltipUnitPercent => get('tooltip_unit_percent');
+
+  // 최근 학습 기록 빈 상태
+  static String get noRecentStudyTitle => get('no_recent_study_title');
+  static String get noRecentStudyMessage => get('no_recent_study_message');
+
+  // 최근 학습 기록 관련 (RecentStudySection 용)
+  static String get recentStudyTitle => get('recent_study_title');
+  static String get cancelSelection => get('cancel_selection');
+  static String get selectMode => get('select_mode');
+  static String get noRecentStudy => get('no_recent_study');
+  static String get startStudyToSeeRecords => get('start_study_to_see_records');
+  static String get totalSessions => get('total_sessions');
+  static String get accuracy => get('accuracy');
+  static String get lastStudyDate => get('last_study_date');
+  static String get today => get('today');
+  static String get yesterday => get('yesterday');
 
   // 다이얼로그
   static String get resetWrongCountTitle => get('reset_wrong_count_title');
@@ -648,4 +891,41 @@ class HomeStrings {
   static String get noFavoritesFoundTitle => get('no_favorites_found_title');
   static String get noFavoritesFoundMessage =>
       get('no_favorites_found_message');
+
+  // 어휘집 목록 관련 (VocabularyListSection 용)
+  static String get vocabularyListTitle => get('vocabulary_list_title');
+  static String get helpTooltip => get('help_tooltip');
+  static String get multiSelectMode => get('multi_select_mode');
+  static String get singleSelectMode => get('single_select_mode');
+  static String get selectAll => get('select_all');
+  static String get unselectAll => get('unselect_all');
+  static String get deleteButton => get('delete_button');
+  static String get exportButton => get('export_button');
+  static String get resetWrongCountsButton => get('reset_wrong_counts_button');
+  static String get resetFavoritesButton => get('reset_favorites_button');
+  static String get selectedVocabularies => get('selected_vocabularies');
+  static String get addNewVocabulary => get('add_new_vocabulary');
+  static String get helpTitle => get('help_title');
+  static String get vocabularyListHelp => get('vocabulary_list_help');
+  static String get deleteConfirmTitle => get('delete_confirm_title');
+  static String deleteConfirmMessage(int count) =>
+      get('delete_confirm_message', params: {'count': count});
+  static String get deleteSuccessMessage => get('delete_success_message');
+  static String get exportSuccessMessage => get('export_success_message');
+  static String get resetWrongCountsTitle => get('reset_wrong_counts_title');
+  static String resetWrongCountsMessage(int count) =>
+      get('reset_wrong_counts_message', params: {'count': count});
+  static String get resetButton => get('reset_button');
+  static String get resetWrongCountsSuccessMessage =>
+      get('reset_wrong_counts_success_message');
+  static String get resetFavoritesSuccessMessage =>
+      get('reset_favorites_success_message');
+
+  // 오류 메시지
+  static String errorDeleteVocabulary(String error) =>
+      get('error_delete_vocabulary', params: {'error': error});
+  static String errorResetWrongCounts(String error) =>
+      get('error_reset_wrong_counts', params: {'error': error});
+  static String errorResetFavorites(String error) =>
+      get('error_reset_favorites', params: {'error': error});
 }

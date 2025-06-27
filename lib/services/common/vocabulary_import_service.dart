@@ -1,8 +1,8 @@
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'dart:async';
-import '../models/vocabulary_word.dart';
-import '../utils/strings/add_vocabulary_strings.dart';
+import '../../models/vocabulary_word.dart';
+import '../../utils/strings/add_vocabulary_strings.dart';
 import 'hive_service.dart';
 
 /// CSV 파일 처리 및 어휘 가져오기를 담당하는 서비스

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../widgets/app_layout.dart';
+import '../widgets/common/app_layout.dart';
 import '../models/vocabulary_word.dart';
 
 import '../utils/strings/study_strings.dart';
 import '../utils/language_provider.dart';
-import '../services/study_service.dart';
+import '../services/word_card/study_service.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
 class StudyScreen extends StatefulWidget {
@@ -14,6 +14,8 @@ class StudyScreen extends StatefulWidget {
   final List<String> vocabularyFiles;
   final String
       studyModePreference; // 위주 학습 설정: 'TargetVoca', 'ReferenceVoca', 'Random'
+  final List<String> posFilters; // 품사 필터
+  final List<String> typeFilters; // 어휘 타입 필터
 
   const StudyScreen({
     super.key,
@@ -21,23 +23,40 @@ class StudyScreen extends StatefulWidget {
     required this.words,
     required this.vocabularyFiles,
     this.studyModePreference = 'TargetVoca', // 기본값
+    this.posFilters = const [],
+    this.typeFilters = const [],
   });
 
   @override
-  State<StudyScreen> createState() => _StudyScreenState();
+  State<StudyScreen> createState() => StudyScreenState();
 }
 
-class _StudyScreenState extends State<StudyScreen> {
+// StudyScreen 컨트롤러 - 외부에서 종료 가능하도록
+class StudyScreenController {
+  static final GlobalKey<StudyScreenState> _key = GlobalKey<StudyScreenState>();
+  
+  static GlobalKey<StudyScreenState> get key => _key;
+  
+  static void exitStudy() {
+    _key.currentState?._exitStudy();
+  }
+}
+
+class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   late StudySession _session;
-  final FocusNode _focusNode = FocusNode();
+  late FocusNode _focusNode;
 
   // 학습 세션 추적을 위한 변수들
   String? _sessionId;
   DateTime? _sessionStartTime;
 
+  bool _isExiting = false; // 중복 종료 방지 플래그
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _focusNode = FocusNode();
     _initializeSession();
     _startSessionTracking();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -47,40 +66,86 @@ class _StudyScreenState extends State<StudyScreen> {
 
   @override
   void dispose() {
-    _endSessionTracking(); // 세션 종료 처리
+    WidgetsBinding.instance.removeObserver(this);
+    // dispose에서는 async를 사용할 수 없으므로 즉시 실행
+    _endSessionTracking().then((_) {
+      debugPrint('🧹 dispose에서 세션 데이턄 저장 완료');
+    }).catchError((e) {
+      debugPrint('❌ dispose에서 세션 저장 실패: $e');
+    });
     _focusNode.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      // 앱이 백그라운드로 가거나 종료될 때 세션 데이터 저장
+      debugPrint('📱 앱 상태 변경: $state - 세션 데이터 저장');
+      _endSessionTracking();
+    }
+  }
+
+  /// StudyMode enum을 문자열로 변환
+  String _getStudyModeString(StudyMode mode) {
+    switch (mode) {
+      case StudyMode.cardStudy:
+        return 'card';
+      case StudyMode.favoriteReview:
+        return 'favorites';
+      case StudyMode.wrongWordsStudy:
+        return 'wrong_words';
+      case StudyMode.urgentReview:
+        return 'urgent_review';
+      case StudyMode.recommendedReview:
+        return 'recommended_review';
+      case StudyMode.leisureReview:
+        return 'leisure_review';
+      case StudyMode.forgettingRisk:
+        return 'forgetting_risk';
+    }
   }
 
   /// 학습 세션 추적 시작
   void _startSessionTracking() async {
     try {
       _sessionStartTime = DateTime.now();
+      final studyModeString = _getStudyModeString(widget.mode);
       _sessionId = await StudyService.instance.startStudySession(
         words: widget.words,
-        studyMode: 'card',
+        studyMode: studyModeString,
         vocabularyFiles: widget.vocabularyFiles,
       );
+      debugPrint('🏁 세션 시작: 모드=$studyModeString, ID=$_sessionId');
     } catch (e) {
-      print('세션 추적 시작 실패: $e');
+      debugPrint('❌ 세션 추적 시작 실패: $e');
     }
   }
 
   /// 학습 세션 추적 종료
-  void _endSessionTracking() async {
+  Future<void> _endSessionTracking() async {
     if (_sessionId != null && _sessionStartTime != null) {
       try {
+        final studyModeString = _getStudyModeString(widget.mode);
+        debugPrint('💾 학습 세션 데이터 저장 시작: $_sessionId (모드: $studyModeString)');
         await StudyService.instance.completeStudySessionEnhanced(
           studiedWords: _session.words,
-          studyMode: 'card',
+          studyMode: studyModeString,
           vocabularyFiles: widget.vocabularyFiles,
           sessionId: _sessionId,
           sessionStart: _sessionStartTime,
           sessionEnd: DateTime.now(),
+          posFilters: widget.posFilters,
+          typeFilters: widget.typeFilters,
+          targetMode: widget.studyModePreference,
         );
+        debugPrint('✅ 학습 세션 데이터 저장 완료: $_sessionId');
       } catch (e) {
-        print('세션 추적 종료 실패: $e');
+        debugPrint('❌ 세션 추적 종료 실패: $e');
       }
+    } else {
+      debugPrint('ℹ️ 저장할 세션 데이터 없음');
     }
   }
 
@@ -291,13 +356,40 @@ class _StudyScreenState extends State<StudyScreen> {
     ));
   }
 
-  void _exitStudy() {
-    Navigator.of(context).pop();
+  void _exitStudy() async {
+    if (_isExiting) {
+      debugPrint('⚠️ 이미 종료 중이므로 중복 처리 방지');
+      return;
+    }
+
+    _isExiting = true;
+    debugPrint('🚪 StudyScreen 종료 시작');
+
+    try {
+      // 세션 추적 종료 (데이터 저장 완료까지 대기)
+      await _endSessionTracking();
+
+      // 잠시 대기하여 DB 저장이 완전히 완료되도록 보장
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      debugPrint('✅ StudyScreen 종료 완료 - 홈으로 이동');
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      debugPrint('❌ StudyScreen 종료 중 오류: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      _isExiting = false;
+    }
   }
 
   void _showCompletionDialog() async {
-    // 세션 완료 처리
-    _endSessionTracking();
+    // 세션 완료 처리 (데이터 저장 완료까지 대기)
+    await _endSessionTracking();
 
     if (mounted) {
       showDialog(
@@ -315,9 +407,15 @@ class _StudyScreenState extends State<StudyScreen> {
             content: Text(StudyStrings.studyCompleted),
             actions: [
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(context).pop(); // 다이얼로그 닫기
-                  Navigator.of(context).pop(); // 학습 화면 닫기
+
+                  // 잠시 대기하여 DB 저장이 완전히 완료되도록 보장
+                  await Future.delayed(const Duration(milliseconds: 500));
+
+                  if (mounted) {
+                    Navigator.of(context).pop(); // 학습 화면 닫기
+                  }
                 },
                 child: Text(StudyStrings.returnToHome),
               ),
@@ -767,81 +865,98 @@ class _StudyScreenState extends State<StudyScreen> {
       );
     }
 
-    return AppLayout(
-      child: Focus(
-        focusNode: _focusNode,
-        onKeyEvent: (node, event) {
-          return _handleKeyEvent(event)
-              ? KeyEventResult.handled
-              : KeyEventResult.ignored;
-        },
-        child: Column(
-          children: [
-            // 학습 진행 상태 바
-            _buildProgressBar(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          debugPrint('⚠️ PopScope: 이미 pop됨');
+          return;
+        }
 
-            // 메인 학습 영역
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // 단어 카드
-                    Expanded(
-                      child: _buildStudyCard(),
-                    ),
+        debugPrint('🔄 PopScope 감지: StudyScreen 나가기 시작');
+        debugPrint('📊 현재 세션 ID: $_sessionId');
+        debugPrint('🕐 세션 시작 시간: $_sessionStartTime');
 
-                    const SizedBox(height: 16),
+        _exitStudy();
 
-                    // 네비게이션 버튼들
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed:
-                                _session.canGoPrevious ? _goToPrevious : null,
-                            child: Text(StudyStrings.previous),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _flipCard,
-                            child: Text(StudyStrings.flip),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _shuffleWords,
-                            child: Text(StudyStrings.shuffle),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _goToNext,
-                            child: Text(StudyStrings.next),
-                          ),
-                        ),
-                      ],
-                    ),
+        debugPrint('✅ PopScope 완료: StudyScreen 나가기 끝');
+      },
+      child: AppLayout(
+        child: Focus(
+          focusNode: _focusNode,
+          onKeyEvent: (node, event) {
+            return _handleKeyEvent(event)
+                ? KeyEventResult.handled
+                : KeyEventResult.ignored;
+          },
+          child: Column(
+            children: [
+              // 학습 진행 상태 바
+              _buildProgressBar(),
 
-                    const SizedBox(height: 8),
+              // 메인 학습 영역
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // 단어 카드
+                      Expanded(
+                        child: _buildStudyCard(),
+                      ),
 
-                    // 키보드 안내
-                    Text(
-                      StudyStrings.keyboardGuide,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                      const SizedBox(height: 16),
+
+                      // 네비게이션 버튼들
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed:
+                                  _session.canGoPrevious ? _goToPrevious : null,
+                              child: Text(StudyStrings.previous),
+                            ),
                           ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _flipCard,
+                              child: Text(StudyStrings.flip),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _shuffleWords,
+                              child: Text(StudyStrings.shuffle),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _goToNext,
+                              child: Text(StudyStrings.next),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // 키보드 안내
+                      Text(
+                        StudyStrings.keyboardGuide,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.grey[600],
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

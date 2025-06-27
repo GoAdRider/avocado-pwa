@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/strings/base_strings.dart';
+import '../../utils/strings/base_strings.dart';
 
 class AppFooter extends StatelessWidget {
   final String? customQuote;

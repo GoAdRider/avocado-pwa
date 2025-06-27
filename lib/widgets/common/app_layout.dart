@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'app_header.dart';
 import 'app_footer.dart';
-import '../utils/language_provider.dart';
-import '../screens/toggle_dialog.dart';
+import '../../utils/language_provider.dart';
+import '../dialogs/shortcut_dialog.dart';
 
 class AppLayout extends StatefulWidget {
   final Widget child;
@@ -33,6 +33,7 @@ class _AppLayoutState extends State<AppLayout> {
           AppHeader(
             isKoreanToEnglish: languageProvider?.isKoreanToEnglish ?? true,
             onLanguageToggle: () {
+              debugPrint('🌐 언어 토글 버튼 클릭됨');
               languageProvider?.toggleLanguage();
             },
             onEditTap: () => _onEditTap(),
@@ -56,7 +57,7 @@ class _AppLayoutState extends State<AppLayout> {
       context: context,
       barrierDismissible: true, // 배경 클릭으로 닫기 가능
       builder: (BuildContext context) {
-        return const ToggleDialog();
+        return const ShortcutDialog();
       },
     );
   }

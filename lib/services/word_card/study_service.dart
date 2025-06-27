@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/vocabulary_word.dart';
-import '../models/favorite.dart';
-import '../models/study_record.dart';
-import '../models/word_stats.dart';
-import '../models/daily_stats.dart';
-import 'hive_service.dart';
+import '../../models/vocabulary_word.dart';
+import '../../models/study_record.dart';
+import '../common/hive_service.dart';
 
 class StudyService {
   static StudyService? _instance;
@@ -49,6 +46,9 @@ class StudyService {
     int hintsUsed = 0,
     DateTime? sessionStart,
     DateTime? sessionEnd,
+    List<String>? posFilters,
+    List<String>? typeFilters,
+    String? targetMode,
   }) async {
     try {
       // StudyRecord 생성 및 저장
@@ -65,6 +65,9 @@ class StudyService {
         hintsUsed: hintsUsed,
         sessionStart: sessionStart,
         sessionEnd: sessionEnd,
+        posFilters: posFilters,
+        typeFilters: typeFilters,
+        targetMode: targetMode,
       );
 
       await _hiveService.addStudyRecord(studyRecord);
@@ -86,15 +89,7 @@ class StudyService {
   }) async {
     try {
       // 각 단어별로 학습 기록 저장 (이미 개별적으로 저장되었을 수 있지만, 세션 완료 시 한번 더 기록)
-      final sessionEnd = DateTime.now();
-      final sessionStart = totalTime != null
-          ? sessionEnd.subtract(totalTime)
-          : sessionEnd.subtract(const Duration(minutes: 10)); // 기본값
-
-      for (final word in studiedWords) {
-        // 개별 단어 기록은 이미 recordStudySession에서 처리됨
-        // 여기서는 세션 완료 이벤트만 기록할 수 있음
-      }
+      // 개별 단어 기록은 이미 recordStudySession에서 처리됨
 
       // 업적 시스템 업데이트 (추후 구현)
       await _updateAchievements(studiedWords.length, correctCount);
@@ -178,7 +173,6 @@ class StudyService {
     required List<String> vocabularyFiles,
   }) async {
     final sessionId = DateTime.now().millisecondsSinceEpoch.toString();
-    final sessionStart = DateTime.now();
 
     // 세션 시작 이벤트 기록 (필요시)
     // 향후 세션별 통계를 위해 사용할 수 있음
@@ -222,6 +216,9 @@ class StudyService {
     DateTime? sessionStart,
     DateTime? sessionEnd,
     Map<String, int>? activityCounts, // 뒤집기, 이동 등 활동 통계
+    List<String>? posFilters,
+    List<String>? typeFilters,
+    String? targetMode,
   }) async {
     try {
       final endTime = sessionEnd ?? DateTime.now();
@@ -240,6 +237,9 @@ class StudyService {
         sessionStart: startTime,
         sessionEnd: endTime,
         hintsUsed: 0,
+        posFilters: posFilters,
+        typeFilters: typeFilters,
+        targetMode: targetMode,
       );
 
       await _hiveService.addStudyRecord(sessionRecord);

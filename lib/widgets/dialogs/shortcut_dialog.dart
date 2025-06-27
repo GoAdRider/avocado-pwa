@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../utils/strings/toggle_strings.dart';
-import '../utils/strings/base_strings.dart';
+import '../../utils/strings/toggle_strings.dart';
+import '../../utils/strings/base_strings.dart';
 
-class ToggleDialog extends StatefulWidget {
-  const ToggleDialog({super.key});
+class ShortcutDialog extends StatefulWidget {
+  const ShortcutDialog({super.key});
 
   @override
-  State<ToggleDialog> createState() => _ToggleDialogState();
+  State<ShortcutDialog> createState() => _ShortcutDialogState();
 }
 
-class _ToggleDialogState extends State<ToggleDialog> {
+class _ShortcutDialogState extends State<ShortcutDialog> {
   bool _isEditingShortcut = false;
   String _editingKey = '';
 

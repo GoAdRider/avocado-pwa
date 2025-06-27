@@ -1,5 +1,5 @@
 import 'hive_service.dart';
-import 'filter_service.dart';
+import '../home/filter/filter_service.dart';
 
 /// 어휘집 관련 비즈니스 로직을 담당하는 서비스
 class VocabularyService {

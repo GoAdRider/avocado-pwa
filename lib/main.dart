@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'utils/language_provider.dart';
-import 'services/hive_service.dart';
+import 'services/common/hive_service.dart';
 
 void main() async {
   // Flutter 위젯 바인딩 초기화
@@ -25,7 +25,11 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
           useMaterial3: true,
         ),
-        home: const HomeScreen(),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const HomeScreen(),
+          '/home': (context) => const HomeScreen(),
+        },
       ),
     );
   }

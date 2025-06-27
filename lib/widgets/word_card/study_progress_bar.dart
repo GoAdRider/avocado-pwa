@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/vocabulary_word.dart';
-import '../utils/strings/study_strings.dart';
+import '../../models/vocabulary_word.dart';
+import '../../utils/strings/study_strings.dart';
 
 class StudyProgressBar extends StatelessWidget {
   final StudySession session;

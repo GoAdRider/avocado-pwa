@@ -29,13 +29,16 @@ class StudyRecordAdapter extends TypeAdapter<StudyRecord> {
       hintsUsed: fields[9] as int,
       sessionStart: fields[10] as DateTime?,
       sessionEnd: fields[11] as DateTime?,
+      posFilters: (fields[12] as List?)?.cast<String>(),
+      typeFilters: (fields[13] as List?)?.cast<String>(),
+      targetMode: fields[14] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, StudyRecord obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -59,7 +62,13 @@ class StudyRecordAdapter extends TypeAdapter<StudyRecord> {
       ..writeByte(10)
       ..write(obj.sessionStart)
       ..writeByte(11)
-      ..write(obj.sessionEnd);
+      ..write(obj.sessionEnd)
+      ..writeByte(12)
+      ..write(obj.posFilters)
+      ..writeByte(13)
+      ..write(obj.typeFilters)
+      ..writeByte(14)
+      ..write(obj.targetMode);
   }
 
   @override

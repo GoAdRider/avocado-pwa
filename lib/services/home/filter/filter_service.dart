@@ -1,6 +1,6 @@
-import '../models/vocabulary_word.dart';
-import '../utils/strings/home_strings.dart';
-import 'hive_service.dart';
+import '../../../models/vocabulary_word.dart';
+import '../../../utils/strings/home_strings.dart';
+import '../../common/hive_service.dart';
 
 /// 필터링 관련 비즈니스 로직을 담당하는 서비스
 class FilterService {
@@ -11,8 +11,8 @@ class FilterService {
   final HiveService _hiveService = HiveService.instance;
 
   // 상수 정의 (언어 독립적)
-  static const String NO_POS_INFO = '__NO_POS__';
-  static const String NO_TYPE_INFO = '__NO_TYPE__';
+  static const String noPosInfo = '__NO_POS__';
+  static const String noTypeInfo = '__NO_TYPE__';
 
   /// 어휘집별 품사(POS) 목록 가져오기
   List<String> getPositionsForFile(String vocabularyFile) {
@@ -22,7 +22,7 @@ class FilterService {
 
     for (final word in words) {
       final pos =
-          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : NO_POS_INFO;
+          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : noPosInfo;
       positions.add(pos);
     }
 
@@ -38,7 +38,7 @@ class FilterService {
     for (final word in words) {
       final type = (word.type != null && word.type!.isNotEmpty)
           ? word.type!
-          : NO_TYPE_INFO;
+          : noTypeInfo;
       types.add(type);
     }
 
@@ -76,7 +76,7 @@ class FilterService {
     for (final word in words) {
       final pos = (word.pos != null && word.pos!.isNotEmpty)
           ? word.pos!
-          : NO_POS_INFO; // 빈 POS를 상수로 처리
+          : noPosInfo; // 빈 POS를 상수로 처리
       positionCounts[pos] = (positionCounts[pos] ?? 0) + 1;
     }
 
@@ -92,7 +92,7 @@ class FilterService {
     for (final word in words) {
       final type = (word.type != null && word.type!.isNotEmpty)
           ? word.type!
-          : NO_TYPE_INFO; // 빈 Type을 상수로 처리
+          : noTypeInfo; // 빈 Type을 상수로 처리
       typeCounts[type] = (typeCounts[type] ?? 0) + 1;
     }
 
@@ -145,7 +145,7 @@ class FilterService {
       if (selectedTypes.isEmpty) return true;
       final wordType = (word.type != null && word.type!.isNotEmpty)
           ? word.type!
-          : NO_TYPE_INFO;
+          : noTypeInfo;
       return selectedTypes.contains(wordType);
     }).toList();
 
@@ -153,7 +153,7 @@ class FilterService {
     final positionCounts = <String, int>{};
     for (final word in filteredWords) {
       final pos =
-          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : NO_POS_INFO;
+          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : noPosInfo;
       positionCounts[pos] = (positionCounts[pos] ?? 0) + 1;
     }
 
@@ -176,7 +176,7 @@ class FilterService {
     final filteredWords = allWords.where((word) {
       if (selectedPositions.isEmpty) return true;
       final wordPos =
-          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : NO_POS_INFO;
+          (word.pos != null && word.pos!.isNotEmpty) ? word.pos! : noPosInfo;
       return selectedPositions.contains(wordPos);
     }).toList();
 
@@ -185,7 +185,7 @@ class FilterService {
     for (final word in filteredWords) {
       final type = (word.type != null && word.type!.isNotEmpty)
           ? word.type!
-          : NO_TYPE_INFO;
+          : noTypeInfo;
       typeCounts[type] = (typeCounts[type] ?? 0) + 1;
     }
 
@@ -236,7 +236,7 @@ class FilterService {
       if (posFilters != null && posFilters.isNotEmpty) {
         final wordPos = (word.pos != null && word.pos!.isNotEmpty)
             ? word.pos!
-            : NO_POS_INFO;
+            : noPosInfo;
         // UI에서 전달받은 필터 값을 내부 상수로 변환해서 비교
         final convertedPosFilters = convertUIFiltersToService(posFilters);
         if (!convertedPosFilters.contains(wordPos)) {
@@ -248,7 +248,7 @@ class FilterService {
       if (typeFilters != null && typeFilters.isNotEmpty) {
         final wordType = (word.type != null && word.type!.isNotEmpty)
             ? word.type!
-            : NO_TYPE_INFO;
+            : noTypeInfo;
         // UI에서 전달받은 필터 값을 내부 상수로 변환해서 비교
         final convertedTypeFilters = convertUIFiltersToService(typeFilters);
         if (!convertedTypeFilters.contains(wordType)) {
@@ -303,7 +303,7 @@ class FilterService {
       final stats = _hiveService.getWordStats(word.id);
       if (stats != null && stats.isWrongWord) {
         wrongWordCount++;
-        totalWrongCount += stats.wrongCount;
+        totalWrongCount += stats.wrongCount.toInt();
       }
     }
 
@@ -381,7 +381,7 @@ class FilterService {
 
   /// UI에서 표시할 품사 텍스트 정리 (언어별 변환)
   String cleanupPositionForUI(String position) {
-    if (position == NO_POS_INFO) {
+    if (position == noPosInfo) {
       return HomeStrings.posNotAvailable; // HomeStrings 사용
     }
     return position;
@@ -389,7 +389,7 @@ class FilterService {
 
   /// UI에서 표시할 타입 텍스트 정리 (언어별 변환)
   String cleanupTypeForUI(String type) {
-    if (type == NO_TYPE_INFO) {
+    if (type == noTypeInfo) {
       return HomeStrings.typeNotAvailable; // HomeStrings 사용
     }
     return type;
@@ -398,9 +398,9 @@ class FilterService {
   /// 필터 목록을 UI용으로 정리 (내부 상수를 UI 문자열로 변환)
   List<String> cleanupFiltersForUI(List<String> filters) {
     return filters.map((filter) {
-      if (filter == NO_POS_INFO) {
+      if (filter == noPosInfo) {
         return HomeStrings.posNotAvailable; // HomeStrings 사용
-      } else if (filter == NO_TYPE_INFO) {
+      } else if (filter == noTypeInfo) {
         return HomeStrings.typeNotAvailable; // HomeStrings 사용
       }
       return filter;
@@ -411,9 +411,9 @@ class FilterService {
   List<String> convertUIFiltersToService(List<String> uiFilters) {
     return uiFilters.map((filter) {
       if (filter == HomeStrings.posNotAvailable) {
-        return NO_POS_INFO;
+        return noPosInfo;
       } else if (filter == HomeStrings.typeNotAvailable) {
-        return NO_TYPE_INFO;
+        return noTypeInfo;
       }
       return filter;
     }).toList();

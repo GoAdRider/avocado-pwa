@@ -11,6 +11,8 @@ class BaseStrings {
       'count_unit': '회',
       'percent_unit': '%',
       'days_unit': '일',
+      'times_unit': '번',
+      'days_ago_unit': '일 전',
 
       // 공통 다이얼로그 버튼
       'cancel': '취소',
@@ -53,6 +55,8 @@ class BaseStrings {
       'count_unit': ' times',
       'percent_unit': '%',
       'days_unit': ' days',
+      'times_unit': ' times',
+      'days_ago_unit': ' days ago',
 
       // 공통 다이얼로그 버튼
       'cancel': 'Cancel',
@@ -120,6 +124,8 @@ class BaseStrings {
   static String get countUnit => get('count_unit');
   static String get percentUnit => get('percent_unit');
   static String get daysUnit => get('days_unit');
+  static String get timesUnit => get('times_unit');
+  static String get daysAgo => get('days_ago_unit');
 
   // 공통 다이얼로그
   static String get cancel => get('cancel');

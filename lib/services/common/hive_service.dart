@@ -1,12 +1,12 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import '../models/vocabulary_word.dart';
-import '../models/quote.dart';
-import '../models/favorite.dart';
-import '../models/word_stats.dart';
-import '../models/study_record.dart';
-import '../models/daily_stats.dart';
-import '../models/achievement.dart';
-import '../models/personal_record.dart';
+import '../../models/vocabulary_word.dart';
+import '../../models/quote.dart';
+import '../../models/favorite.dart';
+import '../../models/word_stats.dart';
+import '../../models/study_record.dart';
+import '../../models/daily_stats.dart';
+import '../../models/achievement.dart';
+import '../../models/personal_record.dart';
 
 class HiveService {
   static const String _vocabularyWordsBox = 'vocabulary_words';
@@ -448,6 +448,46 @@ class HiveService {
     for (final id in recordsToDelete) {
       await studyRecordsBox.delete(id);
     }
+  }
+
+  /// 특정 어휘집의 WordStats만 삭제
+  Future<void> clearWordStats({String? vocabularyFile}) async {
+    if (vocabularyFile != null) {
+      final statsToDelete = wordStatsBox.values
+          .where((stats) => stats.vocabularyFile == vocabularyFile)
+          .map((stats) => stats.wordId)
+          .toList();
+      for (final wordId in statsToDelete) {
+        await wordStatsBox.delete(wordId);
+      }
+    } else {
+      await wordStatsBox.clear();
+    }
+  }
+
+  /// 특정 어휘집의 Favorites만 삭제
+  Future<void> clearFavorites({String? vocabularyFile}) async {
+    if (vocabularyFile != null) {
+      final favoritesToDelete = favoritesBox.values
+          .where((favorite) => favorite.vocabularyFile == vocabularyFile)
+          .map((favorite) => favorite.wordId)
+          .toList();
+      for (final wordId in favoritesToDelete) {
+        await favoritesBox.delete(wordId);
+      }
+    } else {
+      await favoritesBox.clear();
+    }
+  }
+
+  /// 특정 어휘집의 틀린횟수 초기화 (별칭 메서드)
+  Future<void> resetWrongCounts(String vocabularyFile) async {
+    await clearWordStats(vocabularyFile: vocabularyFile);
+  }
+
+  /// 특정 어휘집의 즐겨찾기 초기화 (별칭 메서드)
+  Future<void> resetFavorites(String vocabularyFile) async {
+    await clearFavorites(vocabularyFile: vocabularyFile);
   }
 
   /// 데이터베이스 통계
