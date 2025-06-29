@@ -25,22 +25,19 @@ class VocabularyService {
     // 즐겨찾기 단어들
     final favorites = _hiveService.getFavorites(vocabularyFile: vocabularyFile);
 
-    // 틀린 단어들 (WordStats에서)
-    final wrongWords =
-        _hiveService.getWrongWords(vocabularyFile: vocabularyFile);
-
-    // 틀린 횟수 총합
-    int totalWrongCount = 0;
-    for (final stats in wrongWords) {
-      totalWrongCount += stats.wrongCount;
-    }
+    // 틀린 단어들과 틀린 횟수는 게임 모드 미제공으로 0으로 설정
+    // final wrongWords = _hiveService.getWrongWords(vocabularyFile: vocabularyFile);
+    // int totalWrongCount = 0;
+    // for (final stats in wrongWords) {
+    //   totalWrongCount += stats.wrongCount;
+    // }
 
     return VocabularyFileInfo(
       fileName: vocabularyFile,
       totalWords: words.length,
       favoriteWords: favorites.length,
-      wrongWords: wrongWords.length,
-      wrongCount: totalWrongCount,
+      wrongWords: 0, // 게임 모드 미제공으로 0 설정
+      wrongCount: 0, // 게임 모드 미제공으로 0 설정
       importedDate:
           words.isNotEmpty ? words.first.importedDate : DateTime.now(),
     );
@@ -55,6 +52,17 @@ class VocabularyService {
   /// 어휘집 삭제
   Future<void> deleteVocabularyFile(String vocabularyFile) async {
     await _hiveService.clearVocabularyData(vocabularyFile);
+  }
+
+  /// 특정 단어 삭제
+  Future<bool> deleteVocabularyWord(String vocabularyFile, String wordId) async {
+    try {
+      await _hiveService.deleteVocabularyWord(wordId);
+      return true;
+    } catch (e) {
+      print('❌ VocabularyService: 단어 삭제 오류: $e');
+      return false;
+    }
   }
 
   /// 선택된 어휘집들의 통계 정보 계산

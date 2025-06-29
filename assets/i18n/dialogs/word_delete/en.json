@@ -1,0 +1,30 @@
+{
+  "title": "Delete Word",
+  "word_to_delete": "Word to delete:",
+  "question": "How would you like to handle this word?",
+  "temporary_delete": {
+    "title": "🔸 Temporary Delete",
+    "description_1": "• Excluded only from this study session",
+    "description_2": "• Temporary deletion status is maintained in recent study records",
+    "description_3": "• The word in the vocabulary file remains intact",
+    "description_4": "• The word will reappear when you restart the app"
+  },
+  "permanent_delete": {
+    "title": "🔸 Permanent Delete",
+    "description_1": "• This word will be completely deleted from the vocabulary file",
+    "description_2": "• All related study records will also be deleted",
+    "description_3": "• Cannot be recovered"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "temporary_delete": "Temporary Delete",
+    "permanent_delete": "Permanent Delete"
+  },
+  "messages": {
+    "permanent_deleted": "Word \"{word}\" has been permanently deleted.",
+    "temporary_deleted": "Word \"{word}\" has been temporarily deleted.",
+    "delete_failed": "Failed to delete word.",
+    "delete_error": "Error occurred while deleting word: {error}",
+    "all_words_removed": "All words have been removed. Ending study session."
+  }
+}

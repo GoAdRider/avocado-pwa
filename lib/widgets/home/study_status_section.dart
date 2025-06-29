@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../utils/i18n/simple_i18n.dart';
 import '../dialogs/daily_goals_dialog.dart';
+import '../../services/home/study_status/study_status_service.dart';
 
 class StudyStatusSection extends StatefulWidget {
   const StudyStatusSection({super.key});
@@ -10,6 +12,49 @@ class StudyStatusSection extends StatefulWidget {
 }
 
 class _StudyStatusSectionState extends State<StudyStatusSection> {
+  final StudyStatusService _studyStatusService = StudyStatusService.instance;
+  StreamSubscription<StudyStatusStats>? _statsSubscription;
+  StudyStatusStats _currentStats = const StudyStatusStats();
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribeToStats();
+    _initializeStats();
+  }
+
+  @override
+  void dispose() {
+    _statsSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// 통계 스트림 구독
+  void _subscribeToStats() {
+    _statsSubscription = _studyStatusService.statsStream.listen(
+      (stats) {
+        if (mounted) {
+          setState(() {
+            _currentStats = stats;
+          });
+          print('🔍 StudyStatusSection: 통계 업데이트됨 - 총 ${stats.totalWords}개 단어');
+        }
+      },
+      onError: (error) {
+        print('❌ StudyStatusSection: 통계 스트림 오류 - $error');
+      },
+    );
+  }
+
+  /// 통계 초기화
+  void _initializeStats() async {
+    setState(() {
+      _currentStats = _studyStatusService.currentStats;
+    });
+    
+    // 최신 통계로 새로고침
+    await _studyStatusService.refreshStats();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -67,32 +112,46 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
           children: [
             Expanded(
                 child: _buildStatCard(
-                    tr('stats.total_words', namespace: 'home/study_status'), '1,234${tr('units.words')}')),
+                    tr('stats.total_words', namespace: 'home/study_status'), 
+                    '${_formatNumber(_currentStats.totalWords)}${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    tr('stats.total_favorites', namespace: 'home/study_status'), '45${tr('units.words')}')),
+                    tr('stats.total_favorites', namespace: 'home/study_status'), 
+                    '${_formatNumber(_currentStats.totalFavorites)}${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    tr('stats.total_wrong_words', namespace: 'home/study_status'), '0${tr('units.words')}')),
+                    tr('stats.total_wrong_words', namespace: 'home/study_status'), 
+                    '${_currentStats.totalWrongWords}${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    tr('stats.total_wrong_count', namespace: 'home/study_status'), '0${tr('units.count')}')),
+                    tr('stats.total_wrong_count', namespace: 'home/study_status'), 
+                    '${_currentStats.totalWrongCount}${tr('units.count')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(tr('stats.average_accuracy', namespace: 'home/study_status'),
-                    '85.2${tr('units.percent')}')),
+                    '${_currentStats.averageAccuracy.toStringAsFixed(1)}${tr('units.percent')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    tr('stats.study_streak', namespace: 'home/study_status'), '7${tr('units.days')}')),
+                    tr('stats.study_streak', namespace: 'home/study_status'), 
+                    '${_currentStats.studyStreak}${tr('units.days')}')),
           ],
         ),
       ],
         );
       },
+    );
+  }
+
+  /// 숫자를 천 단위 콤마로 포맷팅
+  String _formatNumber(int number) {
+    if (number == 0) return '0';
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match match) => '${match[1]},',
     );
   }
 

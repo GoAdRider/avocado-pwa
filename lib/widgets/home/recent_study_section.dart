@@ -5,6 +5,7 @@ import '../../utils/i18n/simple_i18n.dart';
 import '../../models/vocabulary_word.dart';
 import '../../screens/study_screen.dart';
 import '../../services/home/filter/filter_service.dart';
+import '../../services/common/temporary_delete_service.dart';
 
 class RecentStudySection extends StatefulWidget {
   final Function? onStudyCompleted; // 학습 완료 시 콜백
@@ -155,6 +156,23 @@ class RecentStudySectionState extends State<RecentStudySection> {
           debugPrint('📚 일반 학습 재개: ${words.length}개 단어');
           break;
       }
+
+      // 임시 삭제된 단어들을 제외 (호버 툴팁과 일치하도록)
+      final sessionKey = TemporaryDeleteService.createSessionKey(
+        vocabularyFiles: vocabularyFiles,
+        studyMode: _getStudyModeString(studyMode),
+        targetMode: targetMode,
+        posFilters: posFilters ?? [],
+        typeFilters: typeFilters ?? [],
+      );
+      
+      final tempDeleteService = TemporaryDeleteService.instance;
+      final filteredWords = words.where((word) => 
+        !tempDeleteService.isTemporarilyDeletedInSession(word.id, sessionKey)
+      ).toList();
+      
+      debugPrint('📚 원본 단어: ${words.length}개 → 임시삭제 제외: ${filteredWords.length}개');
+      words = filteredWords;
 
       if (words.isEmpty) {
         _showNoWordsFoundDialog();
@@ -608,7 +626,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getStudyModeColor(info.studyModeText, isSelected),
+                          color: _getStudyModeColor(info.studyMode, isSelected),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -686,26 +704,28 @@ class RecentStudySectionState extends State<RecentStudySection> {
   }
 
   // 학습 모드별 색상 반환
-  Color _getStudyModeColor(String studyModeText, bool isSelected) {
+  Color _getStudyModeColor(String studyMode, bool isSelected) {
     if (isSelected) {
       return const Color(0xFFE53E3E);
     }
     
-    switch (studyModeText) {
-      case '단어카드':
+    switch (studyMode) {
+      case 'card':
         return const Color(0xFF3B82F6); // 파란색 (학습방법 선택 버튼 색상과 통일)
-      case '즐겨찾기':
+      case 'favorites':
         return const Color(0xFF10B981); // 에메랄드 (학습방법 선택 버튼 색상과 통일)
-      case '틀린단어':
+      case 'wrong_words':
         return const Color(0xFFEF4444); // 빨간색 (학습방법 선택 버튼 색상과 통일)
-      case '긴급복습':
+      case 'urgent_review':
         return const Color(0xFFEC4899); // 모던 핑크 (망각곡선 섹션과 동일)
-      case '권장복습':
+      case 'recommended_review':
         return const Color(0xFFF59E0B); // 모던 앰버 (망각곡선 섹션과 동일)
-      case '여유복습':
+      case 'leisure_review':
         return const Color(0xFF10B981); // 모던 에메랄드 (망각곡선 섹션과 동일)
-      case '망각위험':
+      case 'forgetting_risk':
         return const Color(0xFFEA580C); // 모던 오렌지 (망각곡선 섹션과 동일)
+      case 'smart_review': // 기존 데이터 호환성
+        return const Color(0xFFEC4899); // 긴급복습과 동일한 색상
       default:
         return const Color(0xFF6B7280); // 회색
     }
@@ -751,6 +771,26 @@ class RecentStudySectionState extends State<RecentStudySection> {
       return tr('time.days_ago', namespace: 'home/recent_study', params: {'days': difference.inDays});
     } else {
       return '${date.month}/${date.day}';
+    }
+  }
+
+  /// StudyMode enum을 문자열로 변환
+  String _getStudyModeString(StudyMode mode) {
+    switch (mode) {
+      case StudyMode.cardStudy:
+        return 'card';
+      case StudyMode.favoriteReview:
+        return 'favorites';
+      case StudyMode.wrongWordsStudy:
+        return 'wrong_words';
+      case StudyMode.urgentReview:
+        return 'urgent_review';
+      case StudyMode.recommendedReview:
+        return 'recommended_review';
+      case StudyMode.leisureReview:
+        return 'leisure_review';
+      case StudyMode.forgettingRisk:
+        return 'forgetting_risk';
     }
   }
 

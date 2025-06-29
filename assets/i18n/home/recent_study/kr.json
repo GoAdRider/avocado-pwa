@@ -47,8 +47,8 @@
     "all_filters": "(모든 필터)",
     "pos_filter": "품사 필터",
     "type_filter": "타입 필터",
-    "target_mode_target": "목표어 우선",
-    "target_mode_reference": "참조어 우선",
-    "target_mode_random": "랜덤"
+    "target_mode_target": "TargetVoca",
+    "target_mode_reference": "ReferenceVoca",
+    "target_mode_random": "Random"
   }
 }

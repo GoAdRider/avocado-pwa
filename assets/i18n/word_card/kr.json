@@ -43,5 +43,14 @@
   },
   "progress": {
     "text": "{current} / {total}"
+  },
+  "tooltip": {
+    "vocabulary": "어휘집",
+    "word_count": "단어개수",
+    "unit_count": "개",
+    "unit_times": "회",
+    "favorites": "⭐ 즐겨찾기",
+    "wrong_words": "❌ 틀린단어",
+    "wrong_count": "🔢 틀린횟수"
   }
 }

@@ -3,6 +3,7 @@ import '../../../models/study_record.dart';
 import '../../../models/vocabulary_word.dart';
 import '../../../utils/i18n/simple_i18n.dart';
 import '../../common/hive_service.dart';
+import '../../common/temporary_delete_service.dart';
 import '../filter/filter_service.dart';
 
 /// 최근 학습 기록 정보 클래스 (카드 학습만 포함)
@@ -443,6 +444,7 @@ class RecentStudyService {
       }
       
       final filterService = FilterService.instance;
+      final tempDeleteService = TemporaryDeleteService.instance;
       
       // UI 표시용 형태(예: "명사 (123개)")에서 실제 값만 추출
       List<String>? posFilters;
@@ -457,39 +459,56 @@ class RecentStudyService {
       }
       
       // 학습 모드에 따라 다른 필터링 적용
+      List<VocabularyWord> filteredWords;
       switch (info.studyMode) {
         case 'favorites':
           // 즐겨찾기 복습: 즐겨찾기된 단어만
-          final favoriteWords = filterService.getFilteredWords(
+          filteredWords = filterService.getFilteredWords(
             vocabularyFiles: vocabularyFiles,
             posFilters: posFilters,
             typeFilters: typeFilters,
             favoritesOnly: true,
           );
-          return favoriteWords.length;
+          break;
           
         case 'wrong_words':
           // 틀린단어 학습: 틀린 단어만
-          return _getWrongWordsCount(vocabularyFiles, posFilters, typeFilters);
+          return _getWrongWordsCount(vocabularyFiles, posFilters, typeFilters, info);
           
         case 'urgent_review':
         case 'recommended_review':
         case 'leisure_review':
         case 'forgetting_risk':
           // 망각곡선 기반 복습: 현재는 학습된 단어 기준으로 추정
-          return _getReviewWordsCount(vocabularyFiles, posFilters, typeFilters, info.studyMode);
+          return _getReviewWordsCount(vocabularyFiles, posFilters, typeFilters, info.studyMode, info);
           
         case 'card':
         default:
           // 단어카드 학습: 일반 필터링된 단어
-          final cardWords = filterService.getFilteredWords(
+          filteredWords = filterService.getFilteredWords(
             vocabularyFiles: vocabularyFiles,
             posFilters: posFilters,
             typeFilters: typeFilters,
             favoritesOnly: false,
           );
-          return cardWords.length;
+          break;
       }
+      
+      // 해당 학습 기록의 세션 키 생성
+      final sessionKey = TemporaryDeleteService.createSessionKey(
+        vocabularyFiles: vocabularyFiles,
+        studyMode: info.studyMode,
+        targetMode: info.targetMode,
+        posFilters: posFilters ?? [],
+        typeFilters: typeFilters ?? [],
+      );
+      
+      // 해당 세션에서 임시 삭제된 단어들을 필터링된 목록에서 제외
+      final finalFilteredWords = filteredWords.where((word) => 
+        !tempDeleteService.isTemporarilyDeletedInSession(word.id, sessionKey)
+      ).toList();
+      
+      return finalFilteredWords.length;
       
     } catch (e) {
       debugPrint('필터링된 단어 수 계산 실패: $e');
@@ -567,10 +586,20 @@ class RecentStudyService {
   }
 
   /// 복습 대상 단어 수 계산 (임시 구현 - 학습된 단어 기준)
-  int _getReviewWordsCount(List<String> vocabularyFiles, List<String>? posFilters, List<String>? typeFilters, String reviewType) {
+  int _getReviewWordsCount(List<String> vocabularyFiles, List<String>? posFilters, List<String>? typeFilters, String reviewType, RecentStudyInfo info) {
     try {
       int totalCount = 0;
       final now = DateTime.now();
+      final tempDeleteService = TemporaryDeleteService.instance;
+      
+      // 해당 학습 기록의 세션 키 생성
+      final sessionKey = TemporaryDeleteService.createSessionKey(
+        vocabularyFiles: vocabularyFiles,
+        studyMode: info.studyMode,
+        targetMode: info.targetMode,
+        posFilters: posFilters ?? [],
+        typeFilters: typeFilters ?? [],
+      );
       
       for (final vocabularyFile in vocabularyFiles) {
         // 해당 어휘집의 단어 통계 가져오기
@@ -621,9 +650,14 @@ class RecentStudyService {
         
         // 필터 조건에 맞는 복습 대상 단어만 필터링
         int filteredCount = 0;
+        final tempDeleteService = TemporaryDeleteService.instance;
+        
         for (final wordId in reviewWordIds) {
           final word = wordMap[wordId];
           if (word == null) continue;
+          
+          // 해당 세션에서 임시 삭제된 단어면 제외
+          if (tempDeleteService.isTemporarilyDeletedInSession(word.id, sessionKey)) continue;
           
           // 품사 필터 체크
           bool matchesPos = true;
@@ -655,9 +689,19 @@ class RecentStudyService {
   }
 
   /// 틀린단어 수 계산 (품사/타입 필터 적용)
-  int _getWrongWordsCount(List<String> vocabularyFiles, List<String>? posFilters, List<String>? typeFilters) {
+  int _getWrongWordsCount(List<String> vocabularyFiles, List<String>? posFilters, List<String>? typeFilters, RecentStudyInfo info) {
     try {
       int totalCount = 0;
+      final tempDeleteService = TemporaryDeleteService.instance;
+      
+      // 해당 학습 기록의 세션 키 생성
+      final sessionKey = TemporaryDeleteService.createSessionKey(
+        vocabularyFiles: vocabularyFiles,
+        studyMode: info.studyMode,
+        targetMode: info.targetMode,
+        posFilters: posFilters ?? [],
+        typeFilters: typeFilters ?? [],
+      );
       
       for (final vocabularyFile in vocabularyFiles) {
         // 해당 어휘집의 틀린단어 통계 가져오기
@@ -674,6 +718,9 @@ class RecentStudyService {
         for (final word in allWords) {
           // 틀린단어가 아니면 제외
           if (!wrongWordIds.contains(word.id)) continue;
+          
+          // 해당 세션에서 임시 삭제된 단어면 제외
+          if (tempDeleteService.isTemporarilyDeletedInSession(word.id, sessionKey)) continue;
           
           // 품사 필터 체크
           bool matchesPos = true;

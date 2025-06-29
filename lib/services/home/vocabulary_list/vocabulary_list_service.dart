@@ -2,7 +2,9 @@ import 'dart:async';
 import '../../common/vocabulary_service.dart';
 import '../../common/hive_service.dart';
 import '../filter/filter_service.dart';
+import '../study_status/study_status_service.dart';
 import '../../../utils/i18n/simple_i18n.dart';
+import '../../../widgets/home/recent_study_section.dart';
 
 /// 어휘집 목록 섹션의 UI 로직을 담당하는 서비스
 /// 선택 관리, 액션 처리, 상태 관리 등을 포함
@@ -15,6 +17,7 @@ class VocabularyListService {
   final VocabularyService _vocabularyService = VocabularyService.instance;
   final HiveService _hiveService = HiveService.instance;
   final FilterService _filterService = FilterService.instance;
+  final StudyStatusService _studyStatusService = StudyStatusService.instance;
 
   // 선택 상태 관리
   Set<String> _selectedVocabularyFiles = <String>{};
@@ -70,10 +73,45 @@ class VocabularyListService {
       _emitState();
       print('🔍 상태 방출 완료 - StreamController에 상태 추가됨');
       
+      // 학습 현황 서비스에 어휘집 변경 알림
+      _studyStatusService.notifyVocabularyChanged();
+      
       // 스트림에 리스너가 있는지 확인
       print('🔍 StreamController hasListener: ${_stateController.hasListener}');
     } catch (e) {
       print('❌ VocabularyListService 에러: $e');
+      _emitState(error: e.toString());
+    }
+  }
+
+  /// 완전한 강제 새로고침 (학습 완료 후 즉각 업데이트를 위해)
+  Future<void> forceCompleteRefresh() async {
+    try {
+      print('🔄 VocabularyListService 완전 강제 새로고침 시작');
+      
+      // 모든 캐시 무효화
+      _cachedStats = null;
+      _cachedSelection = null;
+      _cachedState = null;
+      _filterService.clearCache();
+      
+      // 어휘집 데이터 완전 재로드
+      _vocabularyFiles = _vocabularyService.getAllVocabularyFileInfos();
+      print('🔄 완전 재로드 완료: ${_vocabularyFiles.length}개 어휘집');
+
+      // 삭제된 어휘집이 선택되어 있다면 제거
+      _selectedVocabularyFiles.removeWhere((fileName) =>
+          !_vocabularyFiles.any((info) => info.fileName == fileName));
+
+      // 즉시 상태 방출 (강제 업데이트)
+      _emitStateImmediately();
+      print('🔄 강제 상태 방출 완료');
+      
+      // 학습 현황 서비스에 알림
+      _studyStatusService.notifyVocabularyChanged();
+      
+    } catch (e) {
+      print('❌ VocabularyListService 완전 새로고침 에러: $e');
       _emitState(error: e.toString());
     }
   }
@@ -222,6 +260,8 @@ class VocabularyListService {
       for (final fileName in _selectedVocabularyFiles) {
         // 개별 파일 캐시 무효화 (성능 최적화)
         _filterService.clearCacheForFile(fileName);
+        // 관련된 학습 기록도 함께 삭제
+        await _hiveService.deleteStudyRecordsByVocabularyFile(fileName);
         await _vocabularyService.deleteVocabularyFile(fileName);
       }
 
@@ -231,6 +271,10 @@ class VocabularyListService {
       // 삭제 후 강제로 상태 발행 (UI 즉시 업데이트를 위해)
       _emitStateImmediately();
       print('🔧 DEBUG: 삭제 후 강제 상태 발행 완료');
+      
+      // 최근 학습 기록도 즉시 새로고침 (삭제된 어휘집 기록 제거)
+      RecentStudySectionController.refresh();
+      print('🔧 DEBUG: 최근 학습 기록 새로고침 완료');
       
       return true;
     } catch (e) {
@@ -249,6 +293,7 @@ class VocabularyListService {
       }
 
       await refreshVocabularyList();
+      // 학습 현황 업데이트 (이미 refreshVocabularyList에서 호출됨)
       return true;
     } catch (e) {
       _emitState(error: tr('errors.error_reset_wrong_counts', namespace: 'home/vocabulary_list', params: {'error': e.toString()}));
@@ -266,6 +311,7 @@ class VocabularyListService {
       }
 
       await refreshVocabularyList();
+      // 학습 현황 업데이트 (이미 refreshVocabularyList에서 호출됨)
       return true;
     } catch (e) {
       _emitState(error: tr('errors.error_reset_favorites', namespace: 'home/vocabulary_list', params: {'error': e.toString()}));

@@ -39,6 +39,7 @@ class SimpleI18n {
       'dialogs/vocabulary_import',
       'dialogs/shortcuts',
       'dialogs/daily_goals',
+      'dialogs/word_delete',
     ];
     
     // 지원 언어

@@ -73,6 +73,7 @@ flutter:
     - assets/i18n/dialogs/vocabulary_import/
     - assets/i18n/dialogs/shortcuts/
     - assets/i18n/dialogs/daily_goals/
+    - assets/i18n/dialogs/word_delete/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

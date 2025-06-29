@@ -616,6 +616,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
                 crossAxisCount;
 
         return GridView.builder(
+          key: ValueKey('vocab_grid_${vocabularies.length}_${vocabularies.map((v) => '${v.fileName}_${v.totalWords}_${v.favoriteWords}').join('_')}'),
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(

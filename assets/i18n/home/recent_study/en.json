@@ -47,8 +47,8 @@
     "all_filters": "(All Filters)",
     "pos_filter": "POS Filter",
     "type_filter": "Type Filter",
-    "target_mode_target": "Target Priority",
-    "target_mode_reference": "Reference Priority",
+    "target_mode_target": "TargetVoca",
+    "target_mode_reference": "ReferenceVoca",
     "target_mode_random": "Random"
   }
 }

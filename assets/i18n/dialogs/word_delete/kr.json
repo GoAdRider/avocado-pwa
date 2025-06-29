@@ -1,0 +1,30 @@
+{
+  "title": "단어 삭제",
+  "word_to_delete": "삭제할 단어:",
+  "question": "이 단어를 어떻게 처리하시겠습니까?",
+  "temporary_delete": {
+    "title": "🔸 임시삭제",
+    "description_1": "• 이 학습 세션에서만 제외됩니다",
+    "description_2": "• 최근 학습 기록에서도 임시삭제 상태가 유지됩니다",
+    "description_3": "• 어휘집 파일의 단어는 그대로 유지됩니다",
+    "description_4": "• 앱을 다시 시작하면 단어가 다시 나타납니다"
+  },
+  "permanent_delete": {
+    "title": "🔸 영구삭제",
+    "description_1": "• 어휘집 파일에서 이 단어가 완전히 삭제됩니다",
+    "description_2": "• 관련된 모든 학습 기록도 삭제됩니다",
+    "description_3": "• 복구할 수 없습니다"
+  },
+  "buttons": {
+    "cancel": "취소",
+    "temporary_delete": "임시삭제",
+    "permanent_delete": "영구삭제"
+  },
+  "messages": {
+    "permanent_deleted": "단어 \"{word}\"이(가) 영구 삭제되었습니다.",
+    "temporary_deleted": "단어 \"{word}\"이(가) 임시 삭제되었습니다.",
+    "delete_failed": "단어 삭제에 실패했습니다.",
+    "delete_error": "단어 삭제 중 오류가 발생했습니다: {error}",
+    "all_words_removed": "모든 단어가 제거되어 학습을 종료합니다."
+  }
+}

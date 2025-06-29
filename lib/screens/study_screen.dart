@@ -5,6 +5,10 @@ import '../models/vocabulary_word.dart';
 
 import '../utils/i18n/simple_i18n.dart';
 import '../services/word_card/study_service.dart';
+import '../services/home/vocabulary_list/vocabulary_list_service.dart';
+import '../services/common/vocabulary_service.dart';
+import '../services/common/temporary_delete_service.dart';
+import '../widgets/home/recent_study_section.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
 class StudyScreen extends StatefulWidget {
@@ -44,6 +48,8 @@ class StudyScreenController {
 class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   late StudySession _session;
   late FocusNode _focusNode;
+  final VocabularyService _vocabularyService = VocabularyService.instance;
+  final TemporaryDeleteService _tempDeleteService = TemporaryDeleteService.instance;
 
   // 학습 세션 추적을 위한 변수들
   String? _sessionId;
@@ -58,6 +64,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     _focusNode = FocusNode();
     _initializeSession();
     _startSessionTracking();
+    _startTemporaryDeleteSession();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -68,10 +75,11 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     // dispose에서는 async를 사용할 수 없으므로 즉시 실행
     _endSessionTracking().then((_) {
-      debugPrint('🧹 dispose에서 세션 데이턄 저장 완료');
+      debugPrint('🧹 dispose에서 세션 데이터 저장 완료');
     }).catchError((e) {
       debugPrint('❌ dispose에서 세션 저장 실패: $e');
     });
+    _tempDeleteService.endSession(); // 임시 삭제 세션 종료
     _focusNode.dispose();
     super.dispose();
   }
@@ -148,6 +156,19 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// 임시 삭제 세션 시작
+  void _startTemporaryDeleteSession() {
+    final sessionKey = TemporaryDeleteService.createSessionKey(
+      vocabularyFiles: widget.vocabularyFiles,
+      studyMode: _getStudyModeString(widget.mode),
+      targetMode: widget.studyModePreference,
+      posFilters: widget.posFilters,
+      typeFilters: widget.typeFilters,
+    );
+    _tempDeleteService.startSession(sessionKey);
+    debugPrint('🗑️ 임시삭제 세션 시작: $sessionKey');
+  }
+
   void _initializeSession() {
     // 위주 학습 설정에 따라 초기 카드 면 결정
     CardSide initialSide = CardSide.front;
@@ -164,8 +185,11 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     }
     // TargetVoca 모드는 기본값(CardSide.front) 사용
 
-    // 단어들의 즐겨찾기 상태를 실제 데이터베이스와 동기화
-    final wordsWithFavoriteStatus = widget.words.map((word) {
+    // 단어들의 즐겨찾기 상태를 실제 데이터베이스와 동기화하고 임시삭제된 단어들 필터링
+    final wordsWithFavoriteStatus = widget.words.where((word) {
+      // 임시삭제된 단어는 제외
+      return !_tempDeleteService.isTemporarilyDeleted(word.id);
+    }).map((word) {
       final isFavorite = StudyService.instance.isFavorite(word.id);
       return word.copyWith(isFavorite: isFavorite);
     }).toList();
@@ -209,6 +233,9 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         return true;
       case LogicalKeyboardKey.escape:
         _exitStudy();
+        return true;
+      case LogicalKeyboardKey.delete:
+        _showWordDeleteDialog();
         return true;
       default:
         return false;
@@ -368,13 +395,19 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       // 세션 추적 종료 (데이터 저장 완료까지 대기)
       await _endSessionTracking();
 
-      // 잠시 대기하여 DB 저장이 완전히 완료되도록 보장
-      await Future.delayed(const Duration(milliseconds: 500));
-
       debugPrint('✅ StudyScreen 종료 완료 - 홈으로 이동');
 
       if (mounted) {
+        // 어휘집 선택 상태 초기화
+        VocabularyListService.instance.unselectAll();
+        
+        // 단순히 현재 화면 종료 (ESC와 동일한 방식)
         Navigator.of(context).pop();
+        
+        // 홈으로 돌아간 후 최근 학습 기록 새로고침
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          RecentStudySectionController.refresh();
+        });
       }
     } catch (e) {
       debugPrint('❌ StudyScreen 종료 중 오류: $e');
@@ -386,6 +419,211 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _showWordDeleteDialog() {
+    final currentWord = _session.currentWord;
+    if (currentWord == null) return;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            tr('title', namespace: 'dialogs/word_delete'),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.red[700],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 현재 단어 정보
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('word_to_delete', namespace: 'dialogs/word_delete'),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '📝 ${currentWord.targetVoca}',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '🔤 ${currentWord.referenceVoca}',
+                      style: const TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    Text(
+                      '📂 ${currentWord.vocabularyFile}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(tr('question', namespace: 'dialogs/word_delete')),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('temporary_delete.title', namespace: 'dialogs/word_delete'),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange[700]),
+                    ),
+                    Text(tr('temporary_delete.description_1', namespace: 'dialogs/word_delete')),
+                    Text(tr('temporary_delete.description_2', namespace: 'dialogs/word_delete')),
+                    Text(tr('temporary_delete.description_3', namespace: 'dialogs/word_delete')),
+                    Text(tr('temporary_delete.description_4', namespace: 'dialogs/word_delete')),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('permanent_delete.title', namespace: 'dialogs/word_delete'),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red[700]),
+                    ),
+                    Text(tr('permanent_delete.description_1', namespace: 'dialogs/word_delete')),
+                    Text(tr('permanent_delete.description_2', namespace: 'dialogs/word_delete')),
+                    Text(tr('permanent_delete.description_3', namespace: 'dialogs/word_delete')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(tr('buttons.cancel', namespace: 'dialogs/word_delete')),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleWordDelete(currentWord, false); // 임시삭제
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.orange[700]),
+              child: Text(tr('buttons.temporary_delete', namespace: 'dialogs/word_delete')),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _handleWordDelete(currentWord, true); // 영구삭제
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red[700]),
+              child: Text(tr('buttons.permanent_delete', namespace: 'dialogs/word_delete')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _handleWordDelete(VocabularyWord word, bool isPermanent) async {
+    if (isPermanent) {
+      // 영구삭제: 어휘집 파일에서 실제 단어 삭제
+      try {
+        final success = await _vocabularyService.deleteVocabularyWord(word.vocabularyFile, word.id);
+        
+        if (success) {
+          // 모든 세션에서 단어 제거 (영구삭제되었으므로)
+          _tempDeleteService.removeFromAllSessions(word.id);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(tr('messages.permanent_deleted', namespace: 'dialogs/word_delete', params: {'word': word.targetVoca})),
+              backgroundColor: Colors.red,
+            ),
+          );
+          
+          // 삭제된 단어를 세션에서 제거
+          _removeWordFromSession(word);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(tr('messages.delete_failed', namespace: 'dialogs/word_delete')),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr('messages.delete_error', namespace: 'dialogs/word_delete', params: {'error': e.toString()})),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } else {
+      // 임시삭제: 이 세션에서만 제외 (최근 학습 기록에서도 제외됨)
+      _tempDeleteService.addTemporarilyDeletedWord(word.id);
+      _removeWordFromSession(word);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tr('messages.temporary_deleted', namespace: 'dialogs/word_delete', params: {'word': word.targetVoca})),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
+  void _removeWordFromSession(VocabularyWord word) {
+    final updatedWords = _session.words.where((w) => w.id != word.id).toList();
+    
+    if (updatedWords.isEmpty) {
+      // 모든 단어가 제거되면 학습 종료
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(tr('messages.all_words_removed', namespace: 'dialogs/word_delete')),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _exitStudy();
+      return;
+    }
+    
+    // 현재 인덱스 조정
+    int newIndex = _session.currentIndex;
+    if (newIndex >= updatedWords.length) {
+      newIndex = updatedWords.length - 1;
+    }
+    
+    // 세션 업데이트
+    _updateSession(_session.copyWith(
+      words: updatedWords,
+      currentIndex: newIndex,
+    ));
+    
+    setState(() {});
+  }
+
   void _showCompletionDialog() async {
     // 세션 완료 처리 (데이터 저장 완료까지 대기)
     await _endSessionTracking();
@@ -395,39 +633,70 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return AlertDialog(
-            title: Row(
-              children: [
-                const Icon(Icons.celebration, color: Colors.orange),
-                const SizedBox(width: 8),
-                Text(tr('study.congratulations', namespace: 'word_card')),
+          return Focus(
+            autofocus: true,
+            onKeyEvent: (FocusNode node, KeyEvent event) {
+              if (event is KeyDownEvent && event.logicalKey.keyLabel == 'Enter') {
+                // 엔터 키 누르면 '학습 계속'
+                Navigator.of(context).pop();
+                _initializeSession();
+                _startSessionTracking();
+                setState(() {});
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.celebration, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Text(tr('study.congratulations', namespace: 'word_card')),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(tr('study.study_completed', namespace: 'word_card')),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '💡 팁: Enter 키를 누르면 학습을 계속할 수 있습니다',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    debugPrint('🏠 학습 완료 다이얼로그에서 홈으로 돌아가기 클릭');
+                    Navigator.of(context).pop(); // 다이얼로그 닫기
+                    _exitStudy(); // 기존의 exitStudy 메서드 호출
+                  },
+                  child: Text(tr('study.return_to_home', namespace: 'word_card')),
+                ),
+                ElevatedButton(
+                  autofocus: true, // 기본 포커스를 '학습 계속' 버튼에 설정
+                  onPressed: () {
+                    Navigator.of(context).pop(); // 다이얼로그 닫기
+                    _initializeSession(); // 세션 초기화
+                    _startSessionTracking(); // 새 세션 시작
+                    setState(() {}); // 화면 새로고침
+                  },
+                  child: Text(tr('study.continue_study', namespace: 'word_card')),
+                ),
               ],
             ),
-            content: Text(tr('study.study_completed', namespace: 'word_card')),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
-
-                  // 잠시 대기하여 DB 저장이 완전히 완료되도록 보장
-                  await Future.delayed(const Duration(milliseconds: 500));
-
-                  if (mounted) {
-                    Navigator.of(context).pop(); // 학습 화면 닫기
-                  }
-                },
-                child: Text(tr('study.return_to_home', namespace: 'word_card')),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // 다이얼로그 닫기
-                  _initializeSession(); // 세션 초기화
-                  _startSessionTracking(); // 새 세션 시작
-                  setState(() {}); // 화면 새로고침
-                },
-                child: Text(tr('study.continue_study', namespace: 'word_card')),
-              ),
-            ],
           );
         },
       );

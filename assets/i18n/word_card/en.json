@@ -43,5 +43,14 @@
   },
   "progress": {
     "text": "{current} / {total}"
+  },
+  "tooltip": {
+    "vocabulary": "Vocabulary",
+    "word_count": "Word Count",
+    "unit_count": " words",
+    "unit_times": " times",
+    "favorites": "⭐ Favorites",
+    "wrong_words": "❌ Wrong Words",
+    "wrong_count": "🔢 Wrong Count"
   }
 }

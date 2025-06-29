@@ -18,6 +18,7 @@ class HiveService {
   static const String _dailyStatsBox = 'daily_stats';
   static const String _achievementsBox = 'achievements';
   static const String _personalRecordsBox = 'personal_records';
+  static const String _temporaryDeleteBox = 'temporary_delete';
 
   static HiveService? _instance;
   static HiveService get instance => _instance ??= HiveService._internal();
@@ -57,6 +58,7 @@ class HiveService {
     await Hive.openBox<DailyStats>(_dailyStatsBox);
     await Hive.openBox<Achievement>(_achievementsBox);
     await Hive.openBox<PersonalRecord>(_personalRecordsBox);
+    await Hive.openBox(_temporaryDeleteBox); // String key-value 저장용
   }
 
   /// 기본 데이터 초기화
@@ -93,6 +95,7 @@ class HiveService {
       Hive.box<Achievement>(_achievementsBox);
   Box<PersonalRecord> get personalRecordsBox =>
       Hive.box<PersonalRecord>(_personalRecordsBox);
+  Box get temporaryDeleteBox => Hive.box(_temporaryDeleteBox);
 
   // =========================
   // VocabularyWord 관련 메서드
@@ -276,6 +279,20 @@ class HiveService {
       }
       return true;
     }).toList();
+  }
+
+  /// 특정 어휘집과 관련된 모든 학습 기록 삭제
+  Future<void> deleteStudyRecordsByVocabularyFile(String vocabularyFile) async {
+    final recordsToDelete = studyRecordsBox.values
+        .where((record) => record.vocabularyFile == vocabularyFile)
+        .toList();
+    
+    for (final record in recordsToDelete) {
+      await studyRecordsBox.delete(record.id);
+      print('🗑️ StudyRecord 삭제: ${record.id} (어휘집: $vocabularyFile)');
+    }
+    
+    print('🗑️ 어휘집 $vocabularyFile 관련 StudyRecord ${recordsToDelete.length}개 삭제 완료');
   }
 
   // =========================

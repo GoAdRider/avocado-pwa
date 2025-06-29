@@ -7,6 +7,7 @@ import '../widgets/home/recent_study_section.dart';
 import '../services/common/vocabulary_service.dart';
 import '../services/home/filter/filter_service.dart';
 import '../services/home/vocabulary_list/vocabulary_list_service.dart';
+import '../services/home/study_status/study_status_service.dart';
 import '../utils/i18n/simple_i18n.dart';
 import '../models/vocabulary_word.dart';
 import 'study_screen.dart';
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // 서비스
   final VocabularyService _vocabularyService = VocabularyService.instance;
   final FilterService _filterService = FilterService.instance;
+  final StudyStatusService _studyStatusService = StudyStatusService.instance;
 
   // 선택된 항목들
   final Set<String> _selectedVocabFiles = {}; // 어휘집 파일명 선택
@@ -104,8 +106,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       // 최근 학습 기록 새로고침 (RecentStudySection 통해)
       RecentStudySectionController.refresh();
       
-      // 어휘집 목록 새로고침 (비동기)
-      await VocabularyListService.instance.refreshVocabularyList();
+      // 어휘집 목록 완전 강제 새로고침 (학습 완료 후 즉각 업데이트)
+      await VocabularyListService.instance.forceCompleteRefresh();
       
       debugPrint('🔄 모든 섹션 데이터 새로고침 완료');
       
@@ -149,9 +151,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 24),
             RecentStudySection(
               key: RecentStudySectionController.key,
-              onStudyCompleted: () {
+              onStudyCompleted: () async {
                 debugPrint('🔄 RecentStudySection에서 학습 완료 알림 받음');
+                // 짧은 지연 후 새로고침 (Hive 데이터 쓰기 완료 대기)
+                await Future.delayed(const Duration(milliseconds: 100));
                 _forceRefreshData();
+                // 학습 현황 서비스에 학습 완료 알림
+                _studyStatusService.notifyStudyCompleted();
               },
               selectedPOSFilters: _selectedPOSFilters,
               selectedTypeFilters: _selectedTypeFilters,
