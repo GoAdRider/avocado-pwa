@@ -1,0 +1,32 @@
+{
+  "section": {
+    "title": "망각곡선 기반 복습"
+  },
+  "review_types": {
+    "smart_review": "스마트 복습",
+    "urgent_review": "긴급 복습",
+    "recommended_review": "추천 복습",
+    "preview_review": "미리 복습",
+    "forgotten_review": "망각 위험"
+  },
+  "descriptions": {
+    "urgent_review": "즉시 복습이 필요한 단어들",
+    "recommended_review": "복습하면 좋은 단어들",
+    "preview_review": "미리 보는 복습 단어들",
+    "forgotten_review": "망각 위험이 높은 단어들"
+  },
+  "actions": {
+    "start_review": "복습 시작"
+  },
+  "status": {
+    "no_review_words": "복습할 단어가 없습니다",
+    "coming_soon": "곧 출시됩니다"
+  },
+  "study_modes": {
+    "urgent_review": "긴급 복습",
+    "recommended_review": "추천 복습",
+    "leisure_review": "여유 복습",
+    "forgetting_risk": "망각 위험",
+    "smart_review": "스마트 복습"
+  }
+}

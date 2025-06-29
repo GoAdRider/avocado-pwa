@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/vocabulary_word.dart';
-import '../../utils/strings/study_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class StudyProgressBar extends StatelessWidget {
   final StudySession session;
@@ -76,7 +76,7 @@ class StudyProgressBar extends StatelessWidget {
           border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
         ),
         child: Text(
-          '${StudyStrings.selectedVocabularies}($vocabularyCount${StudyStrings.vocabularyCountSuffix})',
+          '${tr('info.selected_vocabularies', namespace: 'word_card')}($vocabularyCount${tr('info.vocabulary_count_suffix', namespace: 'word_card')})',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Colors.blue[800],
                 fontWeight: FontWeight.w500,
@@ -101,7 +101,7 @@ class StudyProgressBar extends StatelessWidget {
         border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Text(
-        '${StudyStrings.progress}: $current/$total ($percent%)',
+        '${tr('info.progress', namespace: 'word_card')}: $current/$total ($percent%)',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.green[800],
               fontWeight: FontWeight.w500,

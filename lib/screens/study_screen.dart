@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import '../widgets/common/app_layout.dart';
 import '../models/vocabulary_word.dart';
 
-import '../utils/strings/study_strings.dart';
-import '../utils/language_provider.dart';
+import '../utils/i18n/simple_i18n.dart';
 import '../services/word_card/study_service.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
@@ -302,7 +301,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     // 섞기 완료 피드백
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(StudyStrings.wordsShuffled),
+        content: Text(tr('study.words_shuffled', namespace: 'word_card')),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -329,8 +328,8 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
 
       // 즐겨찾기 토글 피드백
       final message = isNowFavorite
-          ? StudyStrings.favoriteAdded
-          : StudyStrings.favoriteRemoved;
+          ? tr('study.favorite_added', namespace: 'word_card')
+          : tr('study.favorite_removed', namespace: 'word_card');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -401,10 +400,10 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
               children: [
                 const Icon(Icons.celebration, color: Colors.orange),
                 const SizedBox(width: 8),
-                Text(StudyStrings.congratulations),
+                Text(tr('study.congratulations', namespace: 'word_card')),
               ],
             ),
-            content: Text(StudyStrings.studyCompleted),
+            content: Text(tr('study.study_completed', namespace: 'word_card')),
             actions: [
               TextButton(
                 onPressed: () async {
@@ -417,7 +416,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                     Navigator.of(context).pop(); // 학습 화면 닫기
                   }
                 },
-                child: Text(StudyStrings.returnToHome),
+                child: Text(tr('study.return_to_home', namespace: 'word_card')),
               ),
               ElevatedButton(
                 onPressed: () {
@@ -426,7 +425,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                   _startSessionTracking(); // 새 세션 시작
                   setState(() {}); // 화면 새로고침
                 },
-                child: Text(StudyStrings.continueStudy),
+                child: Text(tr('study.continue_study', namespace: 'word_card')),
               ),
             ],
           );
@@ -438,19 +437,19 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   String _getModeTitle() {
     switch (_session.mode) {
       case StudyMode.cardStudy:
-        return '📖 ${StudyStrings.cardStudy}';
+        return '📖 ${tr('modes.card_study', namespace: 'word_card')}';
       case StudyMode.favoriteReview:
-        return '⭐ ${StudyStrings.favoriteReview}';
+        return '⭐ ${tr('modes.favorite_review', namespace: 'word_card')}';
       case StudyMode.wrongWordsStudy:
-        return '❌ ${StudyStrings.wrongWordsStudy}';
+        return '❌ ${tr('modes.wrong_words_study', namespace: 'word_card')}';
       case StudyMode.urgentReview:
-        return '🔴 ${StudyStrings.urgentReview}';
+        return '🔴 ${tr('modes.urgent_review', namespace: 'word_card')}';
       case StudyMode.recommendedReview:
-        return '🟡 ${StudyStrings.recommendedReview}';
+        return '🟡 ${tr('modes.recommended_review', namespace: 'word_card')}';
       case StudyMode.leisureReview:
-        return '🟢 ${StudyStrings.leisureReview}';
+        return '🟢 ${tr('modes.leisure_review', namespace: 'word_card')}';
       case StudyMode.forgettingRisk:
-        return '⚠️ ${StudyStrings.forgettingRisk}';
+        return '⚠️ ${tr('modes.forgetting_risk', namespace: 'word_card')}';
     }
   }
 
@@ -524,7 +523,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Text(
-        '${StudyStrings.selectedVocabularies}($vocabularyCount${StudyStrings.vocabularyCountSuffix})',
+        '${tr('info.selected_vocabularies', namespace: 'word_card')}($vocabularyCount${tr('info.vocabulary_count_suffix', namespace: 'word_card')})',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.blue[800],
               fontWeight: FontWeight.w500,
@@ -548,7 +547,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
       ),
       child: Text(
-        '${StudyStrings.progress}: $current/$total ($percent%)',
+        '${tr('info.progress', namespace: 'word_card')}: $current/$total ($percent%)',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Colors.green[800],
               fontWeight: FontWeight.w500,
@@ -663,7 +662,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
               border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: Text(
-              '${StudyStrings.wrongCountPrefix}${word.wrongCount}${StudyStrings.wrongCountSuffix}',
+              '${tr('info.wrong_count_prefix', namespace: 'word_card')}${word.wrongCount}${tr('info.wrong_count_suffix', namespace: 'word_card')}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.red[700],
                     fontWeight: FontWeight.bold,
@@ -754,7 +753,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
             // 설명
             if (description != null && description.isNotEmpty) ...[
               Text(
-                StudyStrings.descriptionLabel,
+                tr('content.description_label', namespace: 'word_card'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[700],
@@ -771,7 +770,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
             // 예시
             if (example != null && example.isNotEmpty) ...[
               Text(
-                StudyStrings.exampleLabel,
+                tr('content.example_label', namespace: 'word_card'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue[700],
@@ -808,8 +807,8 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         icon: const Icon(Icons.menu_book),
         label: Text(
           _session.showDetails
-              ? StudyStrings.collapseDetails
-              : StudyStrings.expandDetails,
+              ? tr('content.collapse_details', namespace: 'word_card')
+              : tr('content.expand_details', namespace: 'word_card'),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor:
@@ -833,8 +832,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // LanguageProvider를 통해 언어 변경 감지
-    LanguageProvider.of(context);
+    // 언어 변경은 LanguageNotifier가 자동으로 처리
 
     if (_session.words.isEmpty) {
       return AppLayout(
@@ -849,7 +847,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
               ),
               const SizedBox(height: 16),
               Text(
-                StudyStrings.noWordsAvailable,
+                tr('content.no_words_available', namespace: 'word_card'),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -857,7 +855,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _exitStudy,
-                child: Text(StudyStrings.returnToHome),
+                child: Text(tr('study.return_to_home', namespace: 'word_card')),
               ),
             ],
           ),
@@ -914,28 +912,28 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                             child: ElevatedButton(
                               onPressed:
                                   _session.canGoPrevious ? _goToPrevious : null,
-                              child: Text(StudyStrings.previous),
+                              child: Text(tr('controls.previous', namespace: 'word_card')),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: _flipCard,
-                              child: Text(StudyStrings.flip),
+                              child: Text(tr('controls.flip', namespace: 'word_card')),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: _shuffleWords,
-                              child: Text(StudyStrings.shuffle),
+                              child: Text(tr('controls.shuffle', namespace: 'word_card')),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: ElevatedButton(
                               onPressed: _goToNext,
-                              child: Text(StudyStrings.next),
+                              child: Text(tr('controls.next', namespace: 'word_card')),
                             ),
                           ),
                         ],
@@ -945,7 +943,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
 
                       // 키보드 안내
                       Text(
-                        StudyStrings.keyboardGuide,
+                        tr('controls.keyboard_guide', namespace: 'word_card'),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.grey[600],
                             ),

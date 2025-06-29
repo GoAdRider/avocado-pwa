@@ -7,14 +7,26 @@ import '../widgets/home/recent_study_section.dart';
 import '../services/common/vocabulary_service.dart';
 import '../services/home/filter/filter_service.dart';
 import '../services/home/vocabulary_list/vocabulary_list_service.dart';
-import '../utils/strings/base_strings.dart';
-import '../utils/strings/home_strings.dart';
-import '../utils/language_provider.dart';
+import '../utils/i18n/simple_i18n.dart';
 import '../models/vocabulary_word.dart';
 import 'study_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  // 홈 스크롤 컨트롤러 (static으로 외부에서 접근 가능)
+  static final ScrollController _scrollController = ScrollController();
+  
+  /// 홈 화면 최상단으로 스크롤 (로고 버튼에서 호출)
+  static void scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOut,
+      );
+    }
+  }
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -29,6 +41,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final Set<String> _selectedVocabFiles = {}; // 어휘집 파일명 선택
   final Set<String> _selectedPOSFilters = {}; // 품사 필터 선택
   final Set<String> _selectedTypeFilters = {}; // 타입 필터 선택
+  
+  // 성능 최적화: 선택적 리빌드를 위한 ValueNotifier
+  late final ValueNotifier<Set<String>> _selectedVocabNotifier;
+  late final ValueNotifier<Set<String>> _selectedPOSNotifier;
+  late final ValueNotifier<Set<String>> _selectedTypeNotifier;
 
   // 학습 모드 (라디오 버튼)
   String _studyMode = 'TargetVoca';
@@ -39,12 +56,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // ValueNotifier 초기화
+    _selectedVocabNotifier = ValueNotifier(Set.from(_selectedVocabFiles));
+    _selectedPOSNotifier = ValueNotifier(Set.from(_selectedPOSFilters));
+    _selectedTypeNotifier = ValueNotifier(Set.from(_selectedTypeFilters));
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _editController.dispose();
+    
+    // ValueNotifier 정리
+    _selectedVocabNotifier.dispose();
+    _selectedPOSNotifier.dispose();
+    _selectedTypeNotifier.dispose();
+    
     super.dispose();
   }
 
@@ -97,8 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    // LanguageProvider를 통해 언어 변경 감지
-    LanguageProvider.of(context);
+    // 언어 변경은 LanguageNotifier가 자동으로 처리
 
     // 홈화면이 다시 빌드될 때마다 최근 학습 기록 상태 확인
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -107,8 +134,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
 
     return AppLayout(
-      customQuote: BaseStrings.defaultQuote,
+      customQuote: tr('footer.default_quote'),
       child: SingleChildScrollView(
+        controller: HomeScreen._scrollController,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,21 +160,63 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 24),
             VocabularyListSection(
               onSelectionChanged: (selectedFiles) {
-                setState(() {
+                // setState 없이 즉시 업데이트 (성능 최적화)
+                if (_selectedVocabFiles.length != selectedFiles.length || 
+                    !_selectedVocabFiles.every(selectedFiles.contains)) {
+                  
+                  print('🔧 PERF: Updating vocab selection without setState');
+                  
+                  // 내부 Set 업데이트
                   _selectedVocabFiles.clear();
                   _selectedVocabFiles.addAll(selectedFiles);
-                  // 어휘집 선택이 변경되면 필터 초기화
+                  
+                  // 어휘집 선택이 변경되면 필터도 초기화
                   _selectedPOSFilters.clear();
                   _selectedTypeFilters.clear();
-                });
+                  
+                  // ValueNotifier로 선택적 업데이트
+                  _selectedVocabNotifier.value = Set.from(selectedFiles);
+                  _selectedPOSNotifier.value = Set.from(_selectedPOSFilters);
+                  _selectedTypeNotifier.value = Set.from(_selectedTypeFilters);
+                  
+                  print('🔧 PERF: Filters cleared due to vocab selection change');
+                }
               },
             ),
             const SizedBox(height: 24),
-            _buildFilters(),
+            // 필터 섹션: 어휘집/필터 선택 변경 시에만 리빌드
+            ListenableBuilder(
+              listenable: LanguageNotifier.instance,
+              builder: (context, _) {
+                return ValueListenableBuilder<Set<String>>(
+                  valueListenable: _selectedVocabNotifier,
+                  builder: (context, selectedVocabs, child) {
+                    return ValueListenableBuilder<Set<String>>(
+                      valueListenable: _selectedPOSNotifier,
+                      builder: (context, selectedPOS, child) {
+                        return ValueListenableBuilder<Set<String>>(
+                          valueListenable: _selectedTypeNotifier,
+                          builder: (context, selectedTypes, child) {
+                            print('🔧 PERF: Rebuilding filters section (optimized)');
+                            return _buildFilters();
+                          },
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
             const SizedBox(height: 24),
-            _buildStudyModeSelection(),
+            ListenableBuilder(
+              listenable: LanguageNotifier.instance,
+              builder: (context, _) => _buildStudyModeSelection(),
+            ),
             const SizedBox(height: 24),
-            _buildStudyMethodSelection(),
+            ListenableBuilder(
+              listenable: LanguageNotifier.instance,
+              builder: (context, _) => _buildStudyMethodSelection(),
+            ),
           ],
         ),
       ),
@@ -173,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildTitle() {
     return Center(
       child: Text(
-        HomeStrings.titleMain,
+        tr('main.title'),
         style: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -251,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         Row(
           children: [
             Text(
-              HomeStrings.sectionPosTypeFilter,
+              tr('section.title', namespace: 'home/filter'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
@@ -262,11 +332,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                HomeStrings.filteredWords(
-                    words: int.parse(_getFilteredWordCount()),
-                    favorites: int.parse(_getFilteredFavoriteCount()),
-                    wrong: int.parse(_getFilteredWrongCount()),
-                    wrongCount: int.parse(_getFilteredWrongCountTotal())),
+                tr('stats.filtered_words', namespace: 'home/filter', params: {
+                    'words': int.parse(_getFilteredWordCount()),
+                    'favorites': int.parse(_getFilteredFavoriteCount()),
+                    'wrong': int.parse(_getFilteredWrongCount()),
+                    'wrongCount': int.parse(_getFilteredWrongCountTotal())
+                }),
                 style:
                     const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
@@ -276,53 +347,57 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         const SizedBox(height: 16),
         // 품사 필터
         _buildFilterSection(
-          HomeStrings.posFilter,
+          tr('ui.pos_filter', namespace: 'home/filter'),
           positionFilters,
           _selectedPOSFilters,
           (filter) {
-            setState(() {
-              final filterName = filter.split('(')[0];
+            print('🔧 PERF: POS filter clicked - immediate response');
+            final filterName = filter.split('(')[0];
 
-              // 같은 이름의 기존 필터 찾기
-              final existingFilter = _selectedPOSFilters.firstWhere(
-                (selected) => selected.split('(')[0] == filterName,
-                orElse: () => '',
-              );
+            // 같은 이름의 기존 필터 찾기
+            final existingFilter = _selectedPOSFilters.firstWhere(
+              (selected) => selected.split('(')[0] == filterName,
+              orElse: () => '',
+            );
 
-              if (existingFilter.isNotEmpty) {
-                // 기존 필터가 있으면 제거 (토글 OFF)
-                _selectedPOSFilters.remove(existingFilter);
-              } else {
-                // 기존 필터가 없으면 새로 추가 (토글 ON)
-                _selectedPOSFilters.add(filter);
-              }
-            });
+            if (existingFilter.isNotEmpty) {
+              // 기존 필터가 있으면 제거 (토글 OFF)
+              _selectedPOSFilters.remove(existingFilter);
+            } else {
+              // 기존 필터가 없으면 새로 추가 (토글 ON)
+              _selectedPOSFilters.add(filter);
+            }
+
+            // ValueNotifier로 선택적 업데이트 (setState 제거)
+            _selectedPOSNotifier.value = Set.from(_selectedPOSFilters);
           },
         ),
         const SizedBox(height: 16),
         // 타입 필터
         _buildFilterSection(
-          HomeStrings.typeFilter,
+          tr('ui.type_filter', namespace: 'home/filter'),
           typeFilters,
           _selectedTypeFilters,
           (filter) {
-            setState(() {
-              final filterName = filter.split('(')[0];
+            print('🔧 PERF: Type filter clicked - immediate response');
+            final filterName = filter.split('(')[0];
 
-              // 같은 이름의 기존 필터 찾기
-              final existingFilter = _selectedTypeFilters.firstWhere(
-                (selected) => selected.split('(')[0] == filterName,
-                orElse: () => '',
-              );
+            // 같은 이름의 기존 필터 찾기
+            final existingFilter = _selectedTypeFilters.firstWhere(
+              (selected) => selected.split('(')[0] == filterName,
+              orElse: () => '',
+            );
 
-              if (existingFilter.isNotEmpty) {
-                // 기존 필터가 있으면 제거 (토글 OFF)
-                _selectedTypeFilters.remove(existingFilter);
-              } else {
-                // 기존 필터가 없으면 새로 추가 (토글 ON)
-                _selectedTypeFilters.add(filter);
-              }
-            });
+            if (existingFilter.isNotEmpty) {
+              // 기존 필터가 있으면 제거 (토글 OFF)
+              _selectedTypeFilters.remove(existingFilter);
+            } else {
+              // 기존 필터가 없으면 새로 추가 (토글 ON)
+              _selectedTypeFilters.add(filter);
+            }
+
+            // ValueNotifier로 선택적 업데이트 (setState 제거)
+            _selectedTypeNotifier.value = Set.from(_selectedTypeFilters);
           },
         ),
       ],
@@ -337,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         Row(
           children: [
             Text(
-              HomeStrings.sectionPosTypeFilter,
+              tr('section.title', namespace: 'home/filter'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
@@ -348,8 +423,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                HomeStrings.filteredWords(
-                    words: 0, favorites: 0, wrong: 0, wrongCount: 0),
+                tr('stats.filtered_words', namespace: 'home/filter', params: {
+                    'words': 0,
+                    'favorites': 0,
+                    'wrong': 0,
+                    'wrongCount': 0
+                }),
                 style:
                     const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
@@ -357,9 +436,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
         const SizedBox(height: 16),
-        _buildNoSelectionMessage(HomeStrings.posFilter),
+        _buildNoSelectionMessage(tr('ui.pos_filter', namespace: 'home/filter')),
         const SizedBox(height: 16),
-        _buildNoSelectionMessage(HomeStrings.typeFilter),
+        _buildNoSelectionMessage(tr('ui.type_filter', namespace: 'home/filter')),
       ],
     );
   }
@@ -383,7 +462,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 8),
           Text(
-            HomeStrings.filterNoSelectionGuide(filterType),
+            tr('ui.no_selection_guide', namespace: 'home/filter', params: {'filter_type': filterType}),
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -392,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 4),
           Text(
-            HomeStrings.filterSelectVocabFirst,
+            tr('ui.filter_select_vocab_first', namespace: 'home/filter'),
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -421,24 +500,36 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const Spacer(),
             InkWell(
               onTap: () {
-                setState(() {
-                  selectedFilters.addAll(filters);
-                });
+                print('🔧 PERF: Select all filters - no setState');
+                selectedFilters.addAll(filters);
+                
+                // 적절한 ValueNotifier 업데이트
+                if (selectedFilters == _selectedPOSFilters) {
+                  _selectedPOSNotifier.value = Set.from(_selectedPOSFilters);
+                } else if (selectedFilters == _selectedTypeFilters) {
+                  _selectedTypeNotifier.value = Set.from(_selectedTypeFilters);
+                }
               },
               child: Text(
-                BaseStrings.selectAllFilter,
+                tr('actions.select_all_filter'),
                 style: const TextStyle(fontSize: 12, color: Colors.blue),
               ),
             ),
             const SizedBox(width: 8),
             InkWell(
               onTap: () {
-                setState(() {
-                  selectedFilters.clear();
-                });
+                print('🔧 PERF: Deselect all filters - no setState');
+                selectedFilters.clear();
+                
+                // 적절한 ValueNotifier 업데이트
+                if (selectedFilters == _selectedPOSFilters) {
+                  _selectedPOSNotifier.value = Set.from(_selectedPOSFilters);
+                } else if (selectedFilters == _selectedTypeFilters) {
+                  _selectedTypeNotifier.value = Set.from(_selectedTypeFilters);
+                }
               },
               child: Text(
-                BaseStrings.deselectAllFilter,
+                tr('actions.deselect_all_filter'),
                 style: const TextStyle(fontSize: 12, color: Colors.red),
               ),
             ),
@@ -498,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               runSpacing: 4,
               children: [
                 Text(
-                  HomeStrings.selectedFilters,
+                  tr('ui.selected_filters', namespace: 'home/filter'),
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w500),
                 ),
@@ -548,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         Row(
           children: [
             Text(
-              HomeStrings.sectionStudyMode,
+              tr('section.study_mode', namespace: 'home/study_status'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             InkWell(
@@ -560,11 +651,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         const SizedBox(height: 12),
         Row(
           children: [
-            _buildRadioOption('TargetVoca', HomeStrings.targetVoca),
+            _buildRadioOption('TargetVoca', tr('study_mode.target_voca', namespace: 'home/study_status')),
             const SizedBox(width: 32),
-            _buildRadioOption('ReferenceVoca', HomeStrings.referenceVoca),
+            _buildRadioOption('ReferenceVoca', tr('study_mode.reference_voca', namespace: 'home/study_status')),
             const SizedBox(width: 32),
-            _buildRadioOption('Random', HomeStrings.randomMode),
+            _buildRadioOption('Random', tr('study_mode.random_mode', namespace: 'home/study_status')),
           ],
         ),
       ],
@@ -608,26 +699,26 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          HomeStrings.sectionLearningMethod,
+          tr('section.learning_method', namespace: 'home/study_status'),
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-                child: _buildStudyMethodButton(HomeStrings.cardStudy,
+                child: _buildStudyMethodButton(tr('learning_method.card_study', namespace: 'home/study_status'),
                     const Color(0xFF5A9FD4))), // 톤 다운된 파란색 - 기본 학습
             const SizedBox(width: 8),
             Expanded(
-                child: _buildStudyMethodButton(HomeStrings.favoriteReview,
+                child: _buildStudyMethodButton(tr('learning_method.favorite_review', namespace: 'home/study_status'),
                     const Color(0xFF52B788))), // 톤 다운된 초록색 - 즐겨찾기
             const SizedBox(width: 8),
             Expanded(
-                child: _buildStudyMethodButton(HomeStrings.gameStudy,
+                child: _buildStudyMethodButton(tr('learning_method.game_study', namespace: 'home/study_status'),
                     const Color(0xFF8E7CC3))), // 톤 다운된 보라색 - 게임
             const SizedBox(width: 8),
             Expanded(
-                child: _buildStudyMethodButton(HomeStrings.wrongWordStudy,
+                child: _buildStudyMethodButton(tr('learning_method.wrong_word_study', namespace: 'home/study_status'),
                     const Color(0xFFE07A5F))), // 톤 다운된 주황색 - 틀린단어 (❌ 이모티콘과 구분)
           ],
         ),
@@ -668,14 +759,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       return;
     }
 
-    if (methodText == HomeStrings.cardStudy) {
+    if (methodText == tr('learning_method.card_study', namespace: 'home/study_status')) {
       _startCardStudy();
-    } else if (methodText == HomeStrings.favoriteReview) {
+    } else if (methodText == tr('learning_method.favorite_review', namespace: 'home/study_status')) {
       _startFavoriteReview();
-    } else if (methodText == HomeStrings.gameStudy) {
-      _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
-    } else if (methodText == HomeStrings.wrongWordStudy) {
-      _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+    } else if (methodText == tr('learning_method.game_study', namespace: 'home/study_status')) {
+      _showComingSoonDialog(tr('status.game_feature_coming_soon'));
+    } else if (methodText == tr('learning_method.wrong_word_study', namespace: 'home/study_status')) {
+      _showComingSoonDialog(tr('status.game_feature_coming_soon'));
     }
   }
 
@@ -689,14 +780,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               const Icon(Icons.construction, color: Colors.orange),
               const SizedBox(width: 8),
-              Text(BaseStrings.comingSoon),
+              Text(tr('status.coming_soon')),
             ],
           ),
           content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(BaseStrings.ok),
+              child: Text(tr('dialog.ok')),
             ),
           ],
         );
@@ -714,14 +805,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             children: [
               const Icon(Icons.warning, color: Colors.orange),
               const SizedBox(width: 8),
-              Text(HomeStrings.noVocabSelectedTitle),
+              Text(tr('errors.no_vocab_selected_title', namespace: 'home/vocabulary_list')),
             ],
           ),
-          content: Text(HomeStrings.noVocabSelectedMessage),
+          content: Text(tr('errors.no_vocab_selected_message', namespace: 'home/vocabulary_list')),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(BaseStrings.ok),
+              child: Text(tr('dialog.ok')),
             ),
           ],
         );
@@ -806,11 +897,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // 단어 없음 알림 다이얼로그
   void _showNoWordsFoundDialog({bool isFavorites = false}) {
     final title = isFavorites
-        ? HomeStrings.noFavoritesFoundTitle
-        : HomeStrings.noWordsFoundTitle;
+        ? tr('errors.no_favorites_found_title', namespace: 'home/vocabulary_list')
+        : tr('errors.no_words_found_title', namespace: 'home/vocabulary_list');
     final message = isFavorites
-        ? HomeStrings.noFavoritesFoundMessage
-        : HomeStrings.noWordsFoundMessage;
+        ? tr('errors.no_favorites_found_message', namespace: 'home/vocabulary_list')
+        : tr('errors.no_words_found_message', namespace: 'home/vocabulary_list');
 
     showDialog(
       context: context,
@@ -827,7 +918,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(BaseStrings.ok),
+              child: Text(tr('dialog.ok')),
             ),
           ],
         );
@@ -889,20 +980,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.studyModeHelpTitle),
+        title: Text(tr('help.title', namespace: 'home/study_status')),
         content: SingleChildScrollView(
           child: Text(
-            HomeStrings.studyModeHelpContent,
+            tr('help.content', namespace: 'home/study_status'),
             style: const TextStyle(fontSize: 14, height: 1.5),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(BaseStrings.ok),
+            child: Text(tr('dialog.ok')),
           ),
         ],
       ),
     );
   }
+
 }

@@ -1,0 +1,54 @@
+{
+  "section": {
+    "title": "Recent Study Records"
+  },
+  "actions": {
+    "select_clear": "Delete Selected",
+    "clear_all": "Clear All",
+    "cancel_selection": "Cancel Selection"
+  },
+  "time": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "minutes_ago": "{minutes} minutes ago",
+    "hours_ago": "{hours} hours ago",
+    "days_ago": "{days} days ago",
+    "weeks_ago": "{weeks} weeks ago",
+    "months_ago": "{months} months ago"
+  },
+  "study_modes": {
+    "card": "Word Cards",
+    "favorites": "Favorites",
+    "wrong_words": "Wrong Words",
+    "urgent_review": "Urgent Review",
+    "recommended_review": "Recommended Review",
+    "leisure_review": "Leisure Review",
+    "forgetting_risk": "Forgetting Risk"
+  },
+  "status": {
+    "no_recent_study": "No recent study records",
+    "start_study_to_see_records": "Start studying to see records"
+  },
+  "dialog": {
+    "clear_all_title": "Clear All Records",
+    "clear_all_message": "Do you want to delete all study records?",
+    "delete_selected_title": "Delete Selected Records",
+    "delete_selected_message": "Do you want to delete the selected {count} records?"
+  },
+  "tooltip": {
+    "vocabulary": "Vocabulary",
+    "word_count": "Word Count",
+    "unit_count": "words",
+    "study_mode": "Study Mode",
+    "display_order": "Display Order",
+    "progress": "Progress",
+    "unit_percent": "%",
+    "selected_filters": "Selected Filters",
+    "all_filters": "(All Filters)",
+    "pos_filter": "POS Filter",
+    "type_filter": "Type Filter",
+    "target_mode_target": "Target Priority",
+    "target_mode_reference": "Reference Priority",
+    "target_mode_random": "Random"
+  }
+}

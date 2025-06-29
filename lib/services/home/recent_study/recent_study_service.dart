@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../models/study_record.dart';
 import '../../../models/vocabulary_word.dart';
-import '../../../utils/strings/home_strings.dart';
+import '../../../utils/i18n/simple_i18n.dart';
 import '../../common/hive_service.dart';
 import '../filter/filter_service.dart';
 
@@ -35,17 +35,17 @@ class RecentStudyInfo {
     final difference = now.difference(lastStudyDate);
 
     if (difference.inMinutes < 60) {
-      return HomeStrings.minutesAgo(difference.inMinutes);
+      return tr('time.minutes_ago', namespace: 'home/recent_study', params: {'minutes': difference.inMinutes});
     } else if (difference.inHours < 24) {
-      return HomeStrings.hoursAgo(difference.inHours);
+      return tr('time.hours_ago', namespace: 'home/recent_study', params: {'hours': difference.inHours});
     } else if (difference.inDays < 7) {
-      return HomeStrings.daysAgo(difference.inDays);
+      return tr('time.days_ago', namespace: 'home/recent_study', params: {'days': difference.inDays});
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
-      return HomeStrings.weeksAgo(weeks);
+      return tr('time.weeks_ago', namespace: 'home/recent_study', params: {'weeks': weeks});
     } else {
       final months = (difference.inDays / 30).floor();
-      return HomeStrings.monthsAgo(months);
+      return tr('time.months_ago', namespace: 'home/recent_study', params: {'months': months});
     }
   }
 
@@ -53,23 +53,23 @@ class RecentStudyInfo {
   String get studyModeText {
     switch (studyMode) {
       case 'card':
-        return HomeStrings.studyModeCard;
+        return tr('study_modes.card', namespace: 'home/recent_study');
       case 'favorites':
-        return HomeStrings.studyModeFavorites;
+        return tr('study_modes.favorites', namespace: 'home/recent_study');
       case 'wrong_words':
-        return HomeStrings.studyModeWrongWords;
+        return tr('study_modes.wrong_words', namespace: 'home/recent_study');
       case 'urgent_review':
-        return HomeStrings.studyModeUrgentReview;
+        return tr('study_modes.urgent_review', namespace: 'home/forgetting_curve');
       case 'recommended_review':
-        return HomeStrings.studyModeRecommendedReview;
+        return tr('study_modes.recommended_review', namespace: 'home/forgetting_curve');
       case 'leisure_review':
-        return HomeStrings.studyModeLeisureReview;
+        return tr('study_modes.leisure_review', namespace: 'home/forgetting_curve');
       case 'forgetting_risk':
-        return HomeStrings.studyModeForgettingRisk;
+        return tr('study_modes.forgetting_risk', namespace: 'home/forgetting_curve');
       case 'smart_review': // 기존 데이터 호환성을 위해 유지
-        return HomeStrings.studyModeSmartReview;
+        return tr('study_modes.smart_review', namespace: 'home/forgetting_curve');
       default:
-        return HomeStrings.studyModeCard;
+        return tr('study_modes.card', namespace: 'home/recent_study');
     }
   }
 
@@ -395,9 +395,9 @@ class RecentStudyService {
     final vocabularyFiles = info.vocabularyFile.split(',').map((f) => f.trim().replaceAll('.csv', '')).where((f) => f.isNotEmpty).toList();
     
     if (vocabularyFiles.length == 1) {
-      buffer.writeln('${HomeStrings.tooltipVocabulary}: ${vocabularyFiles.first}');
+      buffer.writeln('${tr('tooltip.vocabulary', namespace: 'home/recent_study')}: ${vocabularyFiles.first}');
     } else {
-      buffer.writeln('${HomeStrings.tooltipVocabulary}:');
+      buffer.writeln('${tr('tooltip.vocabulary', namespace: 'home/recent_study')}:');
       for (final vocabFile in vocabularyFiles) {
         buffer.writeln('       • $vocabFile');
       }
@@ -405,24 +405,24 @@ class RecentStudyService {
 
     // 2. 단어개수 (해당 학습 기록의 필터 조건에 맞는 단어 수)
     final filteredWordCount = _getFilteredWordCount(info);
-    buffer.writeln('${HomeStrings.tooltipWordCount}: ${_formatNumber(filteredWordCount)}${HomeStrings.tooltipUnitCount}');
+    buffer.writeln('${tr('tooltip.word_count', namespace: 'home/recent_study')}: ${_formatNumber(filteredWordCount)}${tr('tooltip.unit_count', namespace: 'home/recent_study')}');
 
     // 3. 학습모드
     final studyModeText = _getStudyModeDisplayText(info.studyMode);
-    buffer.writeln('${HomeStrings.tooltipStudyMode}: $studyModeText');
+    buffer.writeln('${tr('tooltip.study_mode', namespace: 'home/recent_study')}: $studyModeText');
 
     // 4. 표시순서 (해당 학습 기록의 targetMode 사용)
     final targetModeText = _getTargetModeDisplayText(info.targetMode);
-    buffer.writeln('${HomeStrings.tooltipDisplayOrder}: $targetModeText');
+    buffer.writeln('${tr('tooltip.display_order', namespace: 'home/recent_study')}: $targetModeText');
 
     // 5. 진행도 (학습한 단어 / 필터링된 전체 단어)
     final studiedWordsCount = info.totalWords;
     if (filteredWordCount == 0) {
-      buffer.writeln('${HomeStrings.tooltipProgress}: 0/0 (0${HomeStrings.tooltipUnitPercent})');
+      buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: 0/0 (0${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
     } else {
       final progressPercent = ((studiedWordsCount / filteredWordCount) * 100).round();
       final actualProgressPercent = progressPercent > 100 ? 100 : progressPercent;
-      buffer.writeln('${HomeStrings.tooltipProgress}: $studiedWordsCount/$filteredWordCount ($actualProgressPercent${HomeStrings.tooltipUnitPercent})');
+      buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: $studiedWordsCount/$filteredWordCount ($actualProgressPercent${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
     }
 
     // 6. 필터 정보 (해당 학습 기록의 실제 필터 사용)
@@ -501,21 +501,21 @@ class RecentStudyService {
   String _getStudyModeDisplayText(String studyMode) {
     switch (studyMode) {
       case 'card':
-        return HomeStrings.studyModeCard;
+        return tr('study_modes.card', namespace: 'home/recent_study');
       case 'favorites':
-        return HomeStrings.studyModeFavorites;
+        return tr('study_modes.favorites', namespace: 'home/recent_study');
       case 'wrong_words':
-        return HomeStrings.studyModeWrongWords;
+        return tr('study_modes.wrong_words', namespace: 'home/recent_study');
       case 'urgent_review':
-        return HomeStrings.studyModeUrgentReview;
+        return tr('study_modes.urgent_review', namespace: 'home/recent_study');
       case 'recommended_review':
-        return HomeStrings.studyModeRecommendedReview;
+        return tr('study_modes.recommended_review', namespace: 'home/recent_study');
       case 'leisure_review':
-        return HomeStrings.studyModeLeisureReview;
+        return tr('study_modes.leisure_review', namespace: 'home/recent_study');
       case 'forgetting_risk':
-        return HomeStrings.studyModeForgettingRisk;
+        return tr('study_modes.forgetting_risk', namespace: 'home/recent_study');
       default:
-        return HomeStrings.studyModeCard;
+        return tr('study_modes.card', namespace: 'home/recent_study');
     }
   }
 
@@ -523,13 +523,13 @@ class RecentStudyService {
   String _getTargetModeDisplayText(String targetMode) {
     switch (targetMode) {
       case 'TargetVoca':
-        return HomeStrings.tooltipTargetModeTarget;
+        return tr('tooltip.target_mode_target', namespace: 'home/recent_study');
       case 'ReferenceVoca':
-        return HomeStrings.tooltipTargetModeReference;
+        return tr('tooltip.target_mode_reference', namespace: 'home/recent_study');
       case 'Random':
-        return HomeStrings.tooltipTargetModeRandom;
+        return tr('tooltip.target_mode_random', namespace: 'home/recent_study');
       default:
-        return HomeStrings.tooltipTargetModeTarget;
+        return tr('tooltip.target_mode_target', namespace: 'home/recent_study');
     }
   }
 
@@ -537,16 +537,16 @@ class RecentStudyService {
   void _appendFilterInfo(StringBuffer buffer, RecentStudyInfo info) {
     // 기존 학습 기록 호환성: 필터 정보가 없으면 전체단어로 처리
     if (info.posFilters.isEmpty && info.typeFilters.isEmpty) {
-      buffer.writeln('${HomeStrings.selectedFilters} ${HomeStrings.tooltipAllFilters}');
+      buffer.writeln('${tr('tooltip.selected_filters', namespace: 'home/recent_study')} ${tr('tooltip.all_filters', namespace: 'home/recent_study')}');
       return;
     }
 
     // 품사 필터
     if (info.posFilters.isNotEmpty) {
       if (info.posFilters.length == 1) {
-        buffer.writeln('${HomeStrings.tooltipPosFilter}: ${info.posFilters.first}');
+        buffer.writeln('${tr('tooltip.pos_filter', namespace: 'home/recent_study')}: ${info.posFilters.first}');
       } else {
-        buffer.writeln('${HomeStrings.tooltipPosFilter}:');
+        buffer.writeln('${tr('tooltip.pos_filter', namespace: 'home/recent_study')}:');
         for (final filter in info.posFilters) {
           buffer.writeln('        • $filter');
         }
@@ -556,9 +556,9 @@ class RecentStudyService {
     // 타입 필터
     if (info.typeFilters.isNotEmpty) {
       if (info.typeFilters.length == 1) {
-        buffer.writeln('${HomeStrings.tooltipTypeFilter}: ${info.typeFilters.first}');
+        buffer.writeln('${tr('tooltip.type_filter', namespace: 'home/recent_study')}: ${info.typeFilters.first}');
       } else {
-        buffer.writeln('${HomeStrings.tooltipTypeFilter}:');
+        buffer.writeln('${tr('tooltip.type_filter', namespace: 'home/recent_study')}:');
         for (final filter in info.typeFilters) {
           buffer.writeln('        • $filter');
         }

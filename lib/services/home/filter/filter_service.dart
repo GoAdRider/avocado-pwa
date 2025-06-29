@@ -1,14 +1,44 @@
 import '../../../models/vocabulary_word.dart';
-import '../../../utils/strings/home_strings.dart';
+import '../../../utils/i18n/simple_i18n.dart';
 import '../../common/hive_service.dart';
 
-/// 필터링 관련 비즈니스 로직을 담당하는 서비스
+/// 필터링 관련 비즈니스 로직을 담당하는 서비스 (성능 최적화)
 class FilterService {
   static FilterService? _instance;
   static FilterService get instance => _instance ??= FilterService._internal();
   FilterService._internal();
 
   final HiveService _hiveService = HiveService.instance;
+  
+  // 성능 최적화: 메모리 캐시
+  final Map<String, List<VocabularyWord>> _wordCache = {};
+  final Map<String, Map<String, int>> _posCountCache = {};
+  final Map<String, Map<String, int>> _typeCountCache = {};
+  
+  // 캐시 키 생성 헬퍼
+  String _makeCacheKey(List<String> files, [List<String>? filters]) {
+    final filesKey = files.join('|');
+    final filtersKey = filters?.join(',') ?? '';
+    return '$filesKey#$filtersKey';
+  }
+  
+  /// 캐시 무효화 (어휘집 변경 시 호출)
+  void clearCache() {
+    print('🔧 PERF: Clearing FilterService cache');
+    _wordCache.clear();
+    _posCountCache.clear();
+    _typeCountCache.clear();
+  }
+  
+  /// 특정 파일의 캐시만 무효화
+  void clearCacheForFile(String fileName) {
+    print('🔧 PERF: Clearing cache for file: $fileName');
+    _wordCache.remove(fileName);
+    
+    // 해당 파일을 포함하는 모든 캐시 항목 제거
+    _posCountCache.removeWhere((key, value) => key.contains(fileName));
+    _typeCountCache.removeWhere((key, value) => key.contains(fileName));
+  }
 
   // 상수 정의 (언어 독립적)
   static const String noPosInfo = '__NO_POS__';
@@ -128,16 +158,34 @@ class FilterService {
     return typeCounts;
   }
 
-  /// 선택된 타입 필터에 기반하여 품사별 단어 개수 가져오기 (상호 필터링)
+  /// 선택된 타입 필터에 기반하여 품사별 단어 개수 가져오기 (캐싱 최적화)
   Map<String, int> getPositionCountsWithTypeFilter(
     List<String> vocabularyFiles,
     List<String> selectedTypes,
   ) {
     if (vocabularyFiles.isEmpty) return {};
+    
+    final cacheKey = _makeCacheKey(vocabularyFiles, selectedTypes);
+    
+    // 캐시에서 확인
+    if (_posCountCache.containsKey(cacheKey)) {
+      print('🔧 PERF: Position counts cache hit');
+      return _posCountCache[cacheKey]!;
+    }
+    
+    print('🔧 PERF: Position counts cache miss - computing...');
+    final stopwatch = Stopwatch()..start();
 
+    // 단어들을 캐시에서 가져오거나 로드
     List<VocabularyWord> allWords = [];
     for (final file in vocabularyFiles) {
-      allWords.addAll(_hiveService.getVocabularyWords(vocabularyFile: file));
+      if (_wordCache.containsKey(file)) {
+        allWords.addAll(_wordCache[file]!);
+      } else {
+        final words = _hiveService.getVocabularyWords(vocabularyFile: file);
+        _wordCache[file] = words;
+        allWords.addAll(words);
+      }
     }
 
     // 선택된 타입으로 필터링
@@ -157,19 +205,42 @@ class FilterService {
       positionCounts[pos] = (positionCounts[pos] ?? 0) + 1;
     }
 
+    // 결과 캐싱
+    _posCountCache[cacheKey] = positionCounts;
+    
+    stopwatch.stop();
+    print('🔧 PERF: Position counts computed in ${stopwatch.elapsedMilliseconds}ms');
     return positionCounts;
   }
 
-  /// 선택된 품사 필터에 기반하여 타입별 단어 개수 가져오기 (상호 필터링)
+  /// 선택된 품사 필터에 기반하여 타입별 단어 개수 가져오기 (캐싱 최적화)
   Map<String, int> getTypeCountsWithPositionFilter(
     List<String> vocabularyFiles,
     List<String> selectedPositions,
   ) {
     if (vocabularyFiles.isEmpty) return {};
+    
+    final cacheKey = _makeCacheKey(vocabularyFiles, selectedPositions);
+    
+    // 캐시에서 확인
+    if (_typeCountCache.containsKey(cacheKey)) {
+      print('🔧 PERF: Type counts cache hit');
+      return _typeCountCache[cacheKey]!;
+    }
+    
+    print('🔧 PERF: Type counts cache miss - computing...');
+    final stopwatch = Stopwatch()..start();
 
+    // 단어들을 캐시에서 가져오거나 로드
     List<VocabularyWord> allWords = [];
     for (final file in vocabularyFiles) {
-      allWords.addAll(_hiveService.getVocabularyWords(vocabularyFile: file));
+      if (_wordCache.containsKey(file)) {
+        allWords.addAll(_wordCache[file]!);
+      } else {
+        final words = _hiveService.getVocabularyWords(vocabularyFile: file);
+        _wordCache[file] = words;
+        allWords.addAll(words);
+      }
     }
 
     // 선택된 품사로 필터링
@@ -189,6 +260,11 @@ class FilterService {
       typeCounts[type] = (typeCounts[type] ?? 0) + 1;
     }
 
+    // 결과 캐싱
+    _typeCountCache[cacheKey] = typeCounts;
+    
+    stopwatch.stop();
+    print('🔧 PERF: Type counts computed in ${stopwatch.elapsedMilliseconds}ms');
     return typeCounts;
   }
 
@@ -382,7 +458,7 @@ class FilterService {
   /// UI에서 표시할 품사 텍스트 정리 (언어별 변환)
   String cleanupPositionForUI(String position) {
     if (position == noPosInfo) {
-      return HomeStrings.posNotAvailable; // HomeStrings 사용
+      return tr('ui.pos_not_available', namespace: 'home/filter');
     }
     return position;
   }
@@ -390,18 +466,21 @@ class FilterService {
   /// UI에서 표시할 타입 텍스트 정리 (언어별 변환)
   String cleanupTypeForUI(String type) {
     if (type == noTypeInfo) {
-      return HomeStrings.typeNotAvailable; // HomeStrings 사용
+      return tr('ui.type_not_available', namespace: 'home/filter');
     }
     return type;
   }
 
   /// 필터 목록을 UI용으로 정리 (내부 상수를 UI 문자열로 변환)
   List<String> cleanupFiltersForUI(List<String> filters) {
+    final posNotAvailable = tr('ui.pos_not_available', namespace: 'home/filter');
+    final typeNotAvailable = tr('ui.type_not_available', namespace: 'home/filter');
+    
     return filters.map((filter) {
       if (filter == noPosInfo) {
-        return HomeStrings.posNotAvailable; // HomeStrings 사용
+        return posNotAvailable;
       } else if (filter == noTypeInfo) {
-        return HomeStrings.typeNotAvailable; // HomeStrings 사용
+        return typeNotAvailable;
       }
       return filter;
     }).toList();
@@ -409,10 +488,13 @@ class FilterService {
 
   /// UI 필터를 서비스 상수로 변환 (UI 문자열을 내부 상수로 변환)
   List<String> convertUIFiltersToService(List<String> uiFilters) {
+    final posNotAvailable = tr('ui.pos_not_available', namespace: 'home/filter');
+    final typeNotAvailable = tr('ui.type_not_available', namespace: 'home/filter');
+    
     return uiFilters.map((filter) {
-      if (filter == HomeStrings.posNotAvailable) {
+      if (filter == posNotAvailable) {
         return noPosInfo;
-      } else if (filter == HomeStrings.typeNotAvailable) {
+      } else if (filter == typeNotAvailable) {
         return noTypeInfo;
       }
       return filter;

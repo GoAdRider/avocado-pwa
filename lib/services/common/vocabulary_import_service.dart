@@ -2,7 +2,7 @@ import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'dart:async';
 import '../../models/vocabulary_word.dart';
-import '../../utils/strings/add_vocabulary_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 import 'hive_service.dart';
 
 /// CSV 파일 처리 및 어휘 가져오기를 담당하는 서비스
@@ -21,7 +21,7 @@ class VocabularyImportService {
       // CSV 파싱
       List<String> lines = content.split('\n');
       if (lines.isEmpty) {
-        throw VocabularyImportException(AddVocabularyStrings.errorEmptyFile);
+        throw VocabularyImportException(tr('empty_file', namespace: 'dialogs/vocabulary_import/errors'));
       }
 
       // 헤더 파싱
@@ -32,7 +32,7 @@ class VocabularyImportService {
       if (!headers.contains('TargetVoca') ||
           !headers.contains('ReferenceVoca')) {
         throw VocabularyImportException(
-            AddVocabularyStrings.errorMissingRequiredColumns);
+            tr('missing_required_columns', namespace: 'dialogs/vocabulary_import/errors'));
       }
 
       // 데이터 파싱
@@ -95,7 +95,7 @@ class VocabularyImportService {
       }
 
       if (words.isEmpty) {
-        throw VocabularyImportException(AddVocabularyStrings.errorNoValidData);
+        throw VocabularyImportException(tr('no_valid_data', namespace: 'dialogs/vocabulary_import/errors'));
       }
 
       return VocabularyImportResult(

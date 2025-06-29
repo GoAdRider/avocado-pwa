@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/home/recent_study/recent_study_service.dart';
 import '../../services/common/hive_service.dart';
-import '../../utils/strings/base_strings.dart';
-import '../../utils/strings/home_strings.dart';
-import '../../utils/language_provider.dart';
+import '../../utils/i18n/simple_i18n.dart';
 import '../../models/vocabulary_word.dart';
 import '../../screens/study_screen.dart';
 import '../../services/home/filter/filter_service.dart';
@@ -210,7 +208,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(BaseStrings.ok),
+            child: Text(tr('dialog.ok')),
           ),
         ],
       ),
@@ -232,7 +230,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(BaseStrings.ok),
+            child: Text(tr('dialog.ok')),
           ),
         ],
       ),
@@ -371,9 +369,10 @@ class RecentStudySectionState extends State<RecentStudySection> {
 
   @override
   Widget build(BuildContext context) {
-    LanguageProvider.of(context);
-    
-    return Column(
+    return ListenableBuilder(
+      listenable: LanguageNotifier.instance,
+      builder: (context, _) {
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 섹션 헤더
@@ -383,7 +382,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                HomeStrings.recentStudyTitle,
+                tr('section.title', namespace: 'home/recent_study'),
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -409,7 +408,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            HomeStrings.selectClear,
+                            tr('actions.select_clear', namespace: 'home/recent_study'),
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 12),
                           ),
@@ -427,7 +426,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            HomeStrings.clearAll,
+                            tr('actions.clear_all', namespace: 'home/recent_study'),
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 12),
                           ),
@@ -450,7 +449,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            HomeStrings.cancelSelection,
+                            tr('actions.cancel_selection', namespace: 'home/recent_study'),
                             style: const TextStyle(
                                 color: Colors.white, fontSize: 12),
                           ),
@@ -469,7 +468,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
-                              BaseStrings.confirmDelete,
+                              tr('dialog.confirm_delete'),
                               style: const TextStyle(
                                   color: Colors.white, fontSize: 12),
                             ),
@@ -502,6 +501,8 @@ class RecentStudySectionState extends State<RecentStudySection> {
             ),
           ),
       ],
+        );
+      },
     );
   }
 
@@ -526,7 +527,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
             ),
             const SizedBox(height: 6),
             Text(
-              HomeStrings.noRecentStudy,
+              tr('status.no_recent_study', namespace: 'home/recent_study'),
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.grey.shade600,
@@ -536,7 +537,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
             ),
             const SizedBox(height: 2),
             Text(
-              HomeStrings.startStudyToSeeRecords,
+              tr('status.start_study_to_see_records', namespace: 'home/recent_study'),
               style: TextStyle(
                 fontSize: 11,
                 color: Colors.grey.shade500,
@@ -743,11 +744,11 @@ class RecentStudySectionState extends State<RecentStudySection> {
     final difference = now.difference(date);
 
     if (difference.inDays == 0) {
-      return HomeStrings.today;
+      return tr('time.today', namespace: 'home/recent_study');
     } else if (difference.inDays == 1) {
-      return HomeStrings.yesterday;
+      return tr('time.yesterday', namespace: 'home/recent_study');
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}${BaseStrings.daysAgo}';
+      return tr('time.days_ago', namespace: 'home/recent_study', params: {'days': difference.inDays});
     } else {
       return '${date.month}/${date.day}';
     }
@@ -757,12 +758,12 @@ class RecentStudySectionState extends State<RecentStudySection> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.clearAllTitle),
-        content: Text(HomeStrings.clearAllMessage),
+        title: Text(tr('dialog.clear_all_title', namespace: 'home/recent_study')),
+        content: Text(tr('dialog.clear_all_message', namespace: 'home/recent_study')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(BaseStrings.no),
+            child: Text(tr('dialog.no')),
           ),
           TextButton(
             onPressed: () async {
@@ -777,7 +778,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                 debugPrint('전체 삭제 실패: $e');
               }
             },
-            child: Text(BaseStrings.yes,
+            child: Text(tr('dialog.yes'),
                 style: const TextStyle(color: Colors.red)),
           ),
         ],
@@ -789,13 +790,13 @@ class RecentStudySectionState extends State<RecentStudySection> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.deleteSelectedTitle),
+        title: Text(tr('dialog.delete_selected_title', namespace: 'home/recent_study')),
         content: Text(
-            HomeStrings.deleteSelectedMessage(_selectedRecentRecords.length)),
+            tr('dialog.delete_selected_message', namespace: 'home/recent_study', params: {'count': _selectedRecentRecords.length})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(BaseStrings.cancel),
+            child: Text(tr('dialog.cancel')),
           ),
           TextButton(
             onPressed: () async {
@@ -819,7 +820,7 @@ class RecentStudySectionState extends State<RecentStudySection> {
                 debugPrint('선택된 기록 삭제 실패: $e');
               }
             },
-            child: Text(BaseStrings.confirmDelete,
+            child: Text(tr('dialog.confirm_delete'),
                 style: const TextStyle(color: Colors.red)),
           ),
         ],

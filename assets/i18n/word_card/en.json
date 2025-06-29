@@ -1,0 +1,47 @@
+{
+  "study": {
+    "title": "Word Card Study",
+    "words_shuffled": "Words have been shuffled",
+    "favorite_added": "Added to favorites",
+    "favorite_removed": "Removed from favorites",
+    "congratulations": "Congratulations!",
+    "study_completed": "Study completed",
+    "return_to_home": "Return to Home",
+    "continue_study": "Continue Study"
+  },
+  "modes": {
+    "card_study": "Card Study",
+    "favorite_review": "Favorite Review",
+    "wrong_words_study": "Wrong Words Review",
+    "urgent_review": "Urgent Review",
+    "recommended_review": "Recommended Review",
+    "leisure_review": "Leisure Review",
+    "forgetting_risk": "Forgetting Risk"
+  },
+  "info": {
+    "selected_vocabularies": "Selected Vocabularies",
+    "vocabulary_count_suffix": "items",
+    "progress": "Progress",
+    "wrong_count_prefix": "Wrong count: ",
+    "wrong_count_suffix": " times"
+  },
+  "content": {
+    "description_label": "Description",
+    "example_label": "Example",
+    "collapse_details": "Collapse",
+    "expand_details": "Expand",
+    "no_words_available": "No words available to study"
+  },
+  "controls": {
+    "previous": "Previous",
+    "flip": "Flip",
+    "next": "Next",
+    "keyboard_guide": "Keyboard Guide",
+    "favorite_filled": "Favorite set",
+    "favorite_empty": "Favorite unset",
+    "shuffle": "Shuffle"
+  },
+  "progress": {
+    "text": "{current} / {total}"
+  }
+}

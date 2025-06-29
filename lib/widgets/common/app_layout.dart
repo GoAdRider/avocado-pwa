@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_header.dart';
 import 'app_footer.dart';
-import '../../utils/language_provider.dart';
+import '../../utils/i18n/simple_i18n.dart';
 import '../dialogs/shortcut_dialog.dart';
 
 class AppLayout extends StatefulWidget {
@@ -23,30 +23,33 @@ class AppLayout extends StatefulWidget {
 class _AppLayoutState extends State<AppLayout> {
   @override
   Widget build(BuildContext context) {
-    final languageProvider = LanguageProvider.of(context);
-
     return Scaffold(
       backgroundColor: const Color(0xFFFAFAFA),
-      body: Column(
-        children: [
-          // 공통 헤더
-          AppHeader(
-            isKoreanToEnglish: languageProvider?.isKoreanToEnglish ?? true,
-            onLanguageToggle: () {
-              debugPrint('🌐 언어 토글 버튼 클릭됨');
-              languageProvider?.toggleLanguage();
-            },
-            onEditTap: () => _onEditTap(),
-            onSettingsTap: () => _onSettingsTap(),
-          ),
-          // 메인 컨텐츠
-          Expanded(child: widget.child),
-          // 공통 푸터
-          AppFooter(
-            customQuote: widget.customQuote,
-            customAuthor: widget.customAuthor,
-          ),
-        ],
+      body: ListenableBuilder(
+        listenable: LanguageNotifier.instance,
+        builder: (context, _) {
+          return Column(
+            children: [
+              // 공통 헤더
+              AppHeader(
+                isKoreanToEnglish: isKorean,
+                onLanguageToggle: () {
+                  debugPrint('🌐 언어 토글 버튼 클릭됨');
+                  LanguageNotifier.instance.toggle();
+                },
+                onEditTap: () => _onEditTap(),
+                onSettingsTap: () => _onSettingsTap(),
+              ),
+              // 메인 컨텐츠
+              Expanded(child: widget.child),
+              // 공통 푸터
+              AppFooter(
+                customQuote: widget.customQuote,
+                customAuthor: widget.customAuthor,
+              ),
+            ],
+          );
+        },
       ),
     );
   }

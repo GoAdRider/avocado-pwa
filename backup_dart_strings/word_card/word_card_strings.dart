@@ -1,4 +1,4 @@
-class StudyStrings {
+class WordCardStrings {
   static const Map<String, Map<String, String>> _strings = {
     'KR': {
       // 학습 모드 타이틀
@@ -118,7 +118,6 @@ class StudyStrings {
   static String get(String key, {Map<String, dynamic>? params}) {
     String text = _strings[_currentLanguage]?[key] ?? key;
 
-    // 매개변수가 있으면 치환
     if (params != null) {
       params.forEach((paramKey, value) {
         text = text.replaceAll('{$paramKey}', value.toString());

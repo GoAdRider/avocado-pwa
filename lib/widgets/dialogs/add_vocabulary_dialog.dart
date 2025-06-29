@@ -4,8 +4,7 @@ import 'dart:js_interop';
 import 'dart:async';
 import '../../services/common/hive_service.dart';
 import '../../services/common/vocabulary_import_service.dart';
-import '../../utils/strings/add_vocabulary_strings.dart';
-import '../../utils/strings/base_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class AddVocabularyDialog extends StatefulWidget {
   const AddVocabularyDialog({super.key});
@@ -29,8 +28,17 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
   @override
   void initState() {
+    print('🔧 DEBUG: AddVocabularyDialog initState 호출됨');
     super.initState();
-    _setupDragAndDrop();
+    
+    // 임시로 드래그앤드롭 비활성화 (디버깅용)
+    try {
+      _setupDragAndDrop();
+    } catch (e) {
+      print('⚠️ WARNING: 드래그앤드롭 설정 실패, 계속 진행: $e');
+    }
+    
+    print('🔧 DEBUG: AddVocabularyDialog initState 완료');
   }
 
   @override
@@ -82,8 +90,10 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
   // ===== 드래그앤드롭 이벤트 처리 =====
 
   void _setupDragAndDrop() {
+    print('🔧 DEBUG: _setupDragAndDrop 시작');
     try {
       final window = web.window;
+      print('🔧 DEBUG: web.window 접근 성공');
 
       // 전체 창에서 기본 드래그 동작 방지
       window.addEventListener(
@@ -96,8 +106,10 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           (web.Event e) {
             e.preventDefault();
           }.toJS);
-    } catch (e) {
-      debugPrint('드래그앤드롭 설정 오류: $e');
+      print('🔧 DEBUG: 드래그앤드롭 이벤트 리스너 설정 완료');
+    } catch (e, stackTrace) {
+      print('❌ ERROR: 드래그앤드롭 설정 오류: $e');
+      print('❌ StackTrace: $stackTrace');
     }
   }
 
@@ -192,7 +204,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           }.toJS);
     } catch (e) {
       _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileSelection(e.toString()),
+          tr('errors.file_selection', namespace: 'dialogs/vocabulary_import', params: {'error': e.toString()}),
           isError: true);
     }
   }
@@ -219,7 +231,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
       if (results.isEmpty) {
         _setLoading(false);
-        _setTemporaryStatusMessage(AddVocabularyStrings.csvFilesOnly,
+        _setTemporaryStatusMessage(tr('errors.csv_files_only', namespace: 'dialogs/vocabulary_import'),
             isError: true);
         return;
       }
@@ -229,7 +241,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
       if (successResults.isEmpty) {
         _setLoading(false);
-        _setTemporaryStatusMessage(AddVocabularyStrings.noProcessableFiles,
+        _setTemporaryStatusMessage(tr('errors.no_processable_files', namespace: 'dialogs/vocabulary_import'),
             isError: true);
         return;
       }
@@ -245,15 +257,15 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       // 부분 오류 알림
       if (errorResults.isNotEmpty) {
         final errorMessage =
-            errorResults.map((r) => r.errorMessage ?? '알 수 없는 오류').join('\n');
+            errorResults.map((r) => _cleanErrorMessage(r.errorMessage ?? '알 수 없는 오류')).join('\n');
         _setTemporaryStatusMessage(
-            AddVocabularyStrings.partialErrorMessage(errorMessage, _totalWords),
+            tr('errors.partial_error_message', namespace: 'dialogs/vocabulary_import', params: {'errors': errorMessage, 'successCount': _totalWords}),
             isError: true);
       }
     } catch (e) {
       _setLoading(false);
       _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          tr('errors.file_processing', namespace: 'dialogs/vocabulary_import', params: {'error': e.toString()}),
           isError: true);
     }
   }
@@ -295,18 +307,18 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               const Icon(Icons.warning_amber_rounded,
                   color: Colors.orange, size: 24),
               const SizedBox(width: 8),
-              Text(AddVocabularyStrings.duplicateVocabularyTitle),
+              Text(tr('duplicates.title', namespace: 'dialogs/vocabulary_import')),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(AddVocabularyStrings.duplicateVocabularyMessage(
-                  duplicateFiles.length == 1
+              Text(tr('duplicates.message', namespace: 'dialogs/vocabulary_import', params: {
+                  'name': duplicateFiles.length == 1
                       ? duplicateFiles.first
-                      : AddVocabularyStrings.multipleVocabularies(
-                          duplicateFiles.length))),
+                      : tr('duplicates.multiple_vocabularies', namespace: 'dialogs/vocabulary_import', params: {'count': duplicateFiles.length})
+              })),
               if (duplicateFiles.length > 1) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -316,8 +328,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    AddVocabularyStrings.duplicateList(
-                        duplicateFiles.join(', ')),
+                    tr('duplicates.duplicate_list', namespace: 'dialogs/vocabulary_import', params: {'list': duplicateFiles.join(', ')}),
                     style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                   ),
                 ),
@@ -327,22 +338,22 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop('cancel'),
-              child: Text(BaseStrings.cancel),
+              child: Text(tr('dialog.cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('replace'),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: Text(AddVocabularyStrings.replaceVocabulary),
+              child: Text(tr('duplicates.replace_vocabulary', namespace: 'dialogs/vocabulary_import')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('merge'),
               style: TextButton.styleFrom(foregroundColor: Colors.blue),
-              child: Text(AddVocabularyStrings.mergeVocabulary),
+              child: Text(tr('duplicates.merge_vocabulary', namespace: 'dialogs/vocabulary_import')),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('rename'),
               style: TextButton.styleFrom(foregroundColor: Colors.green),
-              child: Text(AddVocabularyStrings.renameVocabulary),
+              child: Text(tr('duplicates.rename_vocabulary', namespace: 'dialogs/vocabulary_import')),
             ),
           ],
         );
@@ -362,7 +373,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
     } catch (e) {
       _setLoading(false);
       _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          tr('errors.file_processing', namespace: 'dialogs/vocabulary_import', params: {'error': e.toString()}),
           isError: true);
     }
   }
@@ -393,8 +404,10 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
       if (errorMessages.isNotEmpty) {
         _setTemporaryStatusMessage(
-            AddVocabularyStrings.partialErrorMessage(
-                errorMessages.join('\n'), totalImported),
+            tr('errors.partial_error_message', namespace: 'dialogs/vocabulary_import', params: {
+                'errors': errorMessages.map(_cleanErrorMessage).join('\n'),
+                'successCount': totalImported
+            }),
             isError: true);
 
         // 부분 성공 시 2초 후 닫기
@@ -402,12 +415,12 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           if (mounted) Navigator.of(context).pop(true);
         });
       } else {
-        _showSuccessAndClose(AddVocabularyStrings.vocabAddedSuccess);
+        _showSuccessAndClose(tr('success.vocab_added', namespace: 'dialogs/vocabulary_import'));
       }
     } catch (e) {
       _setLoading(false);
       _setTemporaryStatusMessage(
-          AddVocabularyStrings.errorFileProcessing(e.toString()),
+          tr('errors.file_processing', namespace: 'dialogs/vocabulary_import', params: {'error': e.toString()}),
           isError: true);
     }
   }
@@ -426,6 +439,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
   @override
   Widget build(BuildContext context) {
+    print('🔧 DEBUG: AddVocabularyDialog build 호출됨');
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
@@ -446,7 +460,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       children: [
         _buildDialogHeader(
           icon: Icons.add_circle_outline,
-          title: AddVocabularyStrings.dialogTitle,
+          title: tr('title', namespace: 'dialogs/vocabulary_import'),
         ),
         const SizedBox(height: 24),
         _buildDropZone(),
@@ -462,7 +476,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
         if (_statusMessage.isEmpty) _buildHelpSection(),
         if (_isLoading) ...[
           const SizedBox(height: 16),
-          _buildLoadingIndicator(AddVocabularyStrings.processingFile),
+          _buildLoadingIndicator(tr('processing_file', namespace: 'dialogs/vocabulary_import')),
         ],
       ],
     );
@@ -477,8 +491,9 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
         children: [
           _buildDialogHeader(
             icon: Icons.preview_outlined,
-            title: AddVocabularyStrings.previewTitleWithCount(
-                _importResults.length),
+            title: tr('file_info.preview_title_with_count', namespace: 'dialogs/vocabulary_import', params: {
+                'count': _importResults.length
+            }),
           ),
           const SizedBox(height: 16),
           _buildFileSummary(),
@@ -514,7 +529,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
         IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close),
-          tooltip: BaseStrings.close,
+          tooltip: tr('dialog.close'),
         ),
       ],
     );
@@ -552,8 +567,8 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               const SizedBox(height: 16),
               Text(
                 _isDragOver
-                    ? AddVocabularyStrings.dragDropActive
-                    : AddVocabularyStrings.dragMultipleFiles,
+                    ? tr('drag_drop_active', namespace: 'dialogs/vocabulary_import')
+                    : tr('drag_multiple_files', namespace: 'dialogs/vocabulary_import'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -564,7 +579,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                AddVocabularyStrings.csvOnlySupport,
+                tr('csv_only_support', namespace: 'dialogs/vocabulary_import'),
                 style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                 textAlign: TextAlign.center,
               ),
@@ -583,7 +598,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            AddVocabularyStrings.orDivider,
+            tr('or_divider', namespace: 'dialogs/vocabulary_import'),
             style: TextStyle(color: Colors.grey[600], fontSize: 14),
           ),
         ),
@@ -599,7 +614,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       child: ElevatedButton.icon(
         onPressed: _isLoading ? null : _pickFiles,
         icon: const Icon(Icons.folder_open),
-        label: Text(AddVocabularyStrings.selectFiles),
+        label: Text(tr('select_files', namespace: 'dialogs/vocabulary_import')),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF6B8E23),
           foregroundColor: Colors.white,
@@ -613,7 +628,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
 
   /// 상태 메시지
   Widget _buildStatusMessage({bool isExpanded = false}) {
-    final isError = _statusMessage.contains(AddVocabularyStrings.errorKeyword);
+    final isError = _statusMessage.contains(tr('errors.error_keyword', namespace: 'dialogs/vocabulary_import'));
 
     return Container(
       width: double.infinity,
@@ -664,7 +679,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                AddVocabularyStrings.helpTitle,
+                tr('help.title', namespace: 'dialogs/vocabulary_import'),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.blue[700],
@@ -674,11 +689,11 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${AddVocabularyStrings.helpHeaderRule}\n'
-            '${AddVocabularyStrings.helpRequiredColumns}\n'
-            '${AddVocabularyStrings.helpOptionalColumns}\n'
-            '${AddVocabularyStrings.helpEncoding}\n'
-            '${AddVocabularyStrings.helpMultipleFiles}',
+            '${tr('help.header_rule', namespace: 'dialogs/vocabulary_import')}\n'
+            '${tr('help.required_columns', namespace: 'dialogs/vocabulary_import')}\n'
+            '${tr('help.optional_columns', namespace: 'dialogs/vocabulary_import')}\n'
+            '${tr('help.encoding', namespace: 'dialogs/vocabulary_import')}\n'
+            '${tr('help.multiple_files', namespace: 'dialogs/vocabulary_import')}',
             style: TextStyle(
               fontSize: 13,
               color: Colors.blue[600],
@@ -724,17 +739,18 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               const Icon(Icons.folder_copy, color: Color(0xFF6B8E23), size: 20),
               const SizedBox(width: 8),
               Text(
-                AddVocabularyStrings.selectedFiles(_importResults.length),
+                tr('file_info.selected_files', namespace: 'dialogs/vocabulary_import', params: {'count': _importResults.length}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(AddVocabularyStrings.totalWords(_totalWords)),
+          Text(tr('file_info.total_words', namespace: 'dialogs/vocabulary_import', params: {'count': _totalWords})),
           const SizedBox(height: 8),
           Text(
-            AddVocabularyStrings.fileList(
-                _importResults.map((r) => r.fileName).join(', ')),
+            tr('file_info.file_list', namespace: 'dialogs/vocabulary_import', params: {
+                'list': _importResults.map((r) => r.fileName).join(', ')
+            }),
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
         ],
@@ -748,7 +764,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          AddVocabularyStrings.dataPreview,
+          tr('file_info.data_preview', namespace: 'dialogs/vocabulary_import'),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
@@ -799,7 +815,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${result.wordCount}${BaseStrings.wordsUnit}',
+                  '${result.wordCount}${tr('units.words')}',
                   style: TextStyle(fontSize: 11, color: Colors.blue[700]),
                 ),
               ),
@@ -845,7 +861,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text(BaseStrings.cancel),
+            child: Text(tr('dialog.cancel')),
           ),
         ),
         const SizedBox(width: 16),
@@ -860,12 +876,50 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                   borderRadius: BorderRadius.circular(8)),
             ),
             child: _isLoading
-                ? _buildLoadingIndicator(AddVocabularyStrings.importingFiles)
-                : Text(AddVocabularyStrings.importFilesButton(
-                    _importResults.length)),
+                ? _buildLoadingIndicator(tr('importing_files', namespace: 'dialogs/vocabulary_import'))
+                : Text(tr('import_files_button', namespace: 'dialogs/vocabulary_import', params: {
+                    'count': _importResults.length
+                })),
           ),
         ),
       ],
     );
+  }
+
+  /// 오류 메시지에서 불필요한 정보 제거
+  String _cleanErrorMessage(String errorMessage) {
+    // 번역 키가 표시되는 경우 처리
+    if (errorMessage.contains('[dialogs/vocabulary_import/errors:')) {
+      if (errorMessage.contains('missing_required_columns')) {
+        return tr('errors.missing_required_columns', namespace: 'dialogs/vocabulary_import');
+      }
+      if (errorMessage.contains('empty_file')) {
+        return tr('errors.empty_file', namespace: 'dialogs/vocabulary_import');
+      }
+      if (errorMessage.contains('no_valid_data')) {
+        return tr('errors.no_valid_data', namespace: 'dialogs/vocabulary_import');
+      }
+    }
+    
+    // 디렉토리 경로 제거 (파일명만 유지)
+    String cleaned = errorMessage.replaceAllMapped(
+      RegExp(r'[C-Z]:[\\\/].*[\\\/]([^\\\/]+\.csv)', caseSensitive: false),
+      (match) => match.group(1) ?? match.group(0) ?? '',
+    );
+    
+    // Unix 스타일 경로 제거
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'\/.*\/([^\/]+\.csv)'),
+      (match) => match.group(1) ?? match.group(0) ?? '',
+    );
+    
+    // \n을 실제 줄바꿈으로 변환 (이중 백슬래시도 처리)
+    cleaned = cleaned.replaceAll('\\\\n', '\n');
+    cleaned = cleaned.replaceAll('\\n', '\n');
+    
+    // 추가 정리: 연속된 공백이나 줄바꿈 정리
+    cleaned = cleaned.replaceAll(RegExp(r'\n+'), '\n').trim();
+    
+    return cleaned;
   }
 }

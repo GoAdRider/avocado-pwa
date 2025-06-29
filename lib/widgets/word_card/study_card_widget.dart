@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/vocabulary_word.dart';
-import '../../utils/strings/study_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class StudyCardWidget extends StatelessWidget {
   final StudySession session;
@@ -114,7 +114,7 @@ class StudyCardWidget extends StatelessWidget {
               border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
             ),
             child: Text(
-              '${StudyStrings.wrongCountPrefix}${word.wrongCount}${StudyStrings.wrongCountSuffix}',
+              '${tr('info.wrong_count_prefix', namespace: 'word_card')}${word.wrongCount}${tr('info.wrong_count_suffix', namespace: 'word_card')}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.red[700],
                     fontWeight: FontWeight.bold,
@@ -137,8 +137,8 @@ class StudyCardWidget extends StatelessWidget {
             ),
             child: Text(
               word.isFavorite
-                  ? StudyStrings.favoriteFilled
-                  : StudyStrings.favoriteEmpty,
+                  ? tr('controls.favorite_filled', namespace: 'word_card')
+                  : tr('controls.favorite_empty', namespace: 'word_card'),
               style: const TextStyle(fontSize: 20),
             ),
           ),
@@ -206,7 +206,7 @@ class StudyCardWidget extends StatelessWidget {
             // 설명
             if (description != null && description.isNotEmpty) ...[
               Text(
-                StudyStrings.descriptionLabel,
+                tr('content.description_label', namespace: 'word_card'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.grey[700],
@@ -223,7 +223,7 @@ class StudyCardWidget extends StatelessWidget {
             // 예시
             if (example != null && example.isNotEmpty) ...[
               Text(
-                StudyStrings.exampleLabel,
+                tr('content.example_label', namespace: 'word_card'),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Colors.blue[700],
@@ -260,8 +260,8 @@ class StudyCardWidget extends StatelessWidget {
         icon: const Icon(Icons.menu_book),
         label: Text(
           session.showDetails
-              ? StudyStrings.collapseDetails
-              : StudyStrings.expandDetails,
+              ? tr('content.collapse_details', namespace: 'word_card')
+              : tr('content.expand_details', namespace: 'word_card'),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor:

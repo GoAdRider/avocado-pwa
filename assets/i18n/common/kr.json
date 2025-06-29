@@ -1,0 +1,48 @@
+{
+  "header": {
+    "app_title": "aVocaDo",
+    "edit_toggle": "단축키편집",
+    "settings": "설정"
+  },
+  "units": {
+    "words": "개",
+    "count": "회",
+    "percent": "%",
+    "days": "일",
+    "times": "번",
+    "days_ago": "일 전"
+  },
+  "dialog": {
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "reset": "초기화",
+    "yes": "예",
+    "no": "아니오",
+    "ok": "확인",
+    "close": "닫기",
+    "file_select": "파일 선택",
+    "confirm_delete": "삭제 확인",
+    "confirm_reset": "초기화 확인",
+    "save_success": "성공적으로 저장되었습니다!"
+  },
+  "footer": {
+    "default_quote": "배움은 평생의 여정입니다. 매일 조금씩 성장하세요."
+  },
+  "actions": {
+    "select_all": "전체 선택",
+    "deselect_all": "전체 해제",
+    "export": "내보내기",
+    "select_all_filter": "모두 선택",
+    "deselect_all_filter": "모두 해제",
+    "start": "시작"
+  },
+  "status": {
+    "coming_soon": "구현 예정",
+    "feature_coming_soon": "이 기능은 곧 추가됩니다.",
+    "game_feature_coming_soon": "게임 기능은 곧 추가됩니다."
+  },
+  "main": {
+    "title": "✨ Do a Vocabulary! ✨"
+  }
+}

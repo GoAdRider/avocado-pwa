@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/strings/base_strings.dart';
-import '../../utils/strings/home_strings.dart';
-import '../../utils/language_provider.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class SmartReviewSection extends StatefulWidget {
   const SmartReviewSection({super.key});
@@ -18,39 +16,40 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
   Map<String, Map<String, String>> get _reviewData => {
         'urgent': {
           'emoji': '🔴',
-          'title': HomeStrings.urgentReviewTitle,
-          'count': '7${BaseStrings.wordsUnit}',
-          'description': HomeStrings.urgentReviewDesc,
+          'title': tr('review_types.urgent_review', namespace: 'home/forgetting_curve'),
+          'count': '7${tr('units.words')}',
+          'description': tr('descriptions.urgent_review', namespace: 'home/forgetting_curve'),
         },
         'recommended': {
           'emoji': '🟡',
-          'title': HomeStrings.recommendedReviewTitle,
-          'count': '12${BaseStrings.wordsUnit}',
-          'description': HomeStrings.recommendedReviewDesc,
+          'title': tr('review_types.recommended_review', namespace: 'home/forgetting_curve'),
+          'count': '12${tr('units.words')}',
+          'description': tr('descriptions.recommended_review', namespace: 'home/forgetting_curve'),
         },
         'preview': {
           'emoji': '🟢',
-          'title': HomeStrings.previewReviewTitle,
-          'count': '5${BaseStrings.wordsUnit}',
-          'description': HomeStrings.previewReviewDesc,
+          'title': tr('review_types.preview_review', namespace: 'home/forgetting_curve'),
+          'count': '5${tr('units.words')}',
+          'description': tr('descriptions.preview_review', namespace: 'home/forgetting_curve'),
         },
         'forgotten': {
           'emoji': '⚠️',
-          'title': HomeStrings.forgottenReviewTitle,
-          'count': '7${BaseStrings.wordsUnit}',
-          'description': HomeStrings.forgottenReviewDesc,
+          'title': tr('review_types.forgotten_review', namespace: 'home/forgetting_curve'),
+          'count': '7${tr('units.words')}',
+          'description': tr('descriptions.forgotten_review', namespace: 'home/forgetting_curve'),
         },
       };
 
   @override
   Widget build(BuildContext context) {
-    LanguageProvider.of(context);
-    
-    return Column(
+    return ListenableBuilder(
+      listenable: LanguageNotifier.instance,
+      builder: (context, _) {
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          HomeStrings.smartReviewTitle,
+          tr('review_types.smart_review', namespace: 'home/forgetting_curve'),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -59,6 +58,8 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
         const SizedBox(height: 12),
         _buildTabStyleReview(),
       ],
+        );
+      },
     );
   }
 
@@ -217,7 +218,7 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      BaseStrings.start,
+                      tr('actions.start'),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -380,16 +381,16 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
   void _handleReviewTap(String reviewType) {
     switch (reviewType) {
       case 'urgent':
-        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
         break;
       case 'recommended':
-        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
         break;
       case 'preview':
-        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
         break;
       case 'forgotten':
-        _showComingSoonDialog(BaseStrings.gameFeatureComingSoon);
+        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
         break;
     }
   }
@@ -400,12 +401,12 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('🚧 ${BaseStrings.comingSoon}'),
+          title: Text('🚧 ${tr('status.coming_soon')}'),
           content: Text(message),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(BaseStrings.confirm),
+              child: Text(tr('dialog.confirm')),
             ),
           ],
         );

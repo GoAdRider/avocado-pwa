@@ -1,0 +1,30 @@
+{
+  "title": "🎯 Daily Learning Goals",
+  "description": "Set your daily learning goals to achieve.",
+  "goals": {
+    "daily_new_words": "New Words",
+    "daily_review_words": "Review Words",
+    "daily_perfect_answers": "Perfect Answers",
+    "weekly_goal": "Weekly Goal",
+    "monthly_goal": "Monthly Goal"
+  },
+  "units": {
+    "words": "words",
+    "count": "items"
+  },
+  "current_progress": {
+    "title": "Today's Progress",
+    "achieved": "Achieved",
+    "remaining": "Remaining"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "reset": "Reset"
+  },
+  "messages": {
+    "save_success": "Goals have been successfully saved!",
+    "reset_confirm": "Do you want to reset all goals to default values?",
+    "invalid_value": "Please enter a valid number."
+  }
+}

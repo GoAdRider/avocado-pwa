@@ -1,0 +1,47 @@
+{
+  "section": {
+    "title": "어휘집 목록"
+  },
+  "mode": {
+    "single_select": "단일 선택",
+    "multi_select": "다중 선택"
+  },
+  "actions": {
+    "select_all": "전체 선택",
+    "unselect_all": "전체 해제",
+    "delete_button": "삭제",
+    "export_button": "내보내기",
+    "reset_wrong_counts_button": "틀린횟수 초기화",
+    "reset_favorites_button": "즐겨찾기 초기화",
+    "reset_button": "초기화"
+  },
+  "guide": {
+    "vocab_info": "📝 총 단어수 ⭐ 즐겨찾기 ❌ 틀린단어 🔢 틀린횟수 📅 추가날짜",
+    "add_new_vocab": "새로운\n어휘집 추가하기"
+  },
+  "dialog": {
+    "help_title": "어휘집 목록 도움말",
+    "help_content": "어휘집을 선택하여 학습하거나 관리할 수 있습니다.\n\n📁 CSV 데이터 형식\n• 반드시 CSV 파일 형식이어야 합니다\n• 필수 열: TargetVoca, ReferenceVoca\n• 선택 열: POS, Type, TargetPronunciation, TargetDesc, ReferenceDesc, TargetEx, ReferenceEx, Favorites\n\n🎯 열 설명\n• TargetVoca: 학습할 언어 (예: apple)\n• ReferenceVoca: 이해할 수 있는 언어 (예: 사과)\n• POS: 품사 (예: 명사, 동사, 형용사)\n• Type: 단어 유형 (예: 일반, 중요, 어려움)\n• TargetPronunciation: 발음 기호 (예: /ˈæpəl/)\n• TargetDesc: 학습 언어 추가 설명\n• ReferenceDesc: 이해 언어 추가 설명\n• TargetEx: 학습 언어 예문 (예: I eat an apple)\n• ReferenceEx: 이해 언어 예문 (예: 나는 사과를 먹는다)\n• Favorites: 즐겨찾기 여부 (true/false)\n\n💡 언어 구분 규칙\n• Target 관련: 학습할 언어 입력\n• Reference 관련: 모국어 또는 이해 가능한 언어 입력\n\n📋 기능\n• 단일 선택: 하나의 어휘집만 선택\n• 다중 선택: 여러 어휘집을 함께 선택\n• 전체 선택/해제: 모든 어휘집을 한 번에 선택/해제\n• 삭제: 선택된 어휘집들을 완전히 삭제\n• 내보내기: 선택된 어휘집들을 CSV 파일로 내보내기",
+    "delete_confirm_title": "어휘집 삭제",
+    "delete_confirm_message": "선택된 {count}개의 어휘집을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
+    "delete_success_message": "어휘집이 성공적으로 삭제되었습니다.",
+    "export_success_message": "어휘집이 성공적으로 내보내졌습니다.",
+    "reset_wrong_counts_title": "틀린횟수 초기화",
+    "reset_wrong_counts_message": "선택된 {count}개 어휘집의 틀린횟수를 모두 0으로 초기화하시겠습니까?",
+    "reset_wrong_counts_success": "틀린횟수가 성공적으로 초기화되었습니다.",
+    "reset_favorites_title": "즐겨찾기 초기화",
+    "reset_favorites_message": "선택된 {count}개 어휘집의 즐겨찾기를 모두 해제하시겠습니까?",
+    "reset_favorites_success": "즐겨찾기가 성공적으로 초기화되었습니다."
+  },
+  "errors": {
+    "no_vocab_selected_title": "어휘집 미선택",
+    "no_vocab_selected_message": "학습을 시작하려면 먼저 어휘집을 선택해주세요.",
+    "no_words_found_title": "단어 없음",
+    "no_words_found_message": "선택된 조건에 맞는 단어가 없습니다. 필터를 조정해보세요.",
+    "no_favorites_found_title": "즐겨찾기 없음",
+    "no_favorites_found_message": "즐겨찾기로 설정된 단어가 없습니다.",
+    "error_delete_vocabulary": "어휘집 삭제 중 오류가 발생했습니다: {error}",
+    "error_reset_wrong_counts": "틀린횟수 초기화 중 오류가 발생했습니다: {error}",
+    "error_reset_favorites": "즐겨찾기 초기화 중 오류가 발생했습니다: {error}"
+  }
+}

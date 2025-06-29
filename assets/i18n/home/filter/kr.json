@@ -1,0 +1,22 @@
+{
+  "section": {
+    "title": "품사/타입 필터"
+  },
+  "ui": {
+    "pos_filter": "품사 필터",
+    "type_filter": "타입 필터",
+    "selected_filters": "선택된 필터",
+    "filter_select_vocab_first": "먼저 어휘집을 선택하세요.",
+    "pos_not_available": "품사 정보 없음",
+    "type_not_available": "타입 정보 없음",
+    "no_selection_guide": "{filter_type}를 보려면 먼저 어휘집을 선택하세요."
+  },
+  "stats": {
+    "filtered_words": "필터된 단어: {words}개 | 즐겨찾기: {favorites}개 | 틀린단어: {wrong}개 | 틀린횟수: {wrongCount}회"
+  },
+  "tooltip": {
+    "all_filters": "모든 필터 도움말",
+    "pos_filter": "품사별로 필터링합니다",
+    "type_filter": "타입별로 필터링합니다"
+  }
+}

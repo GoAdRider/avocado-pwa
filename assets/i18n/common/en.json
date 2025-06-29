@@ -1,0 +1,48 @@
+{
+  "header": {
+    "app_title": "aVocaDo",
+    "edit_toggle": "Shortcuts",
+    "settings": "Settings"
+  },
+  "units": {
+    "words": "words",
+    "count": "times",
+    "percent": "%",
+    "days": "days",
+    "times": "times",
+    "days_ago": "days ago"
+  },
+  "dialog": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "reset": "Reset",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "close": "Close",
+    "file_select": "Select File",
+    "confirm_delete": "Confirm Delete",
+    "confirm_reset": "Confirm Reset",
+    "save_success": "Successfully saved!"
+  },
+  "footer": {
+    "default_quote": "Learning is a lifelong journey. Grow a little every day."
+  },
+  "actions": {
+    "select_all": "Select All",
+    "deselect_all": "Deselect All",
+    "export": "Export",
+    "select_all_filter": "Select All",
+    "deselect_all_filter": "Deselect All",
+    "start": "Start"
+  },
+  "status": {
+    "coming_soon": "Coming Soon",
+    "feature_coming_soon": "This feature will be added soon.",
+    "game_feature_coming_soon": "Game feature will be added soon."
+  },
+  "main": {
+    "title": "✨ Do a Vocabulary! ✨"
+  }
+}

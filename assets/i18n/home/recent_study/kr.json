@@ -1,0 +1,54 @@
+{
+  "section": {
+    "title": "최근 학습 기록"
+  },
+  "actions": {
+    "select_clear": "선택 삭제",
+    "clear_all": "전체 삭제",
+    "cancel_selection": "선택 취소"
+  },
+  "time": {
+    "today": "오늘",
+    "yesterday": "어제",
+    "minutes_ago": "{minutes}분 전",
+    "hours_ago": "{hours}시간 전",
+    "days_ago": "{days}일 전",
+    "weeks_ago": "{weeks}주 전",
+    "months_ago": "{months}개월 전"
+  },
+  "study_modes": {
+    "card": "단어카드",
+    "favorites": "즐겨찾기",
+    "wrong_words": "틀린단어",
+    "urgent_review": "긴급복습",
+    "recommended_review": "추천복습",
+    "leisure_review": "여유복습",
+    "forgetting_risk": "망각위험"
+  },
+  "status": {
+    "no_recent_study": "최근 학습 기록이 없습니다",
+    "start_study_to_see_records": "학습을 시작하면 기록이 표시됩니다"
+  },
+  "dialog": {
+    "clear_all_title": "전체 기록 삭제",
+    "clear_all_message": "모든 학습 기록을 삭제하시겠습니까?",
+    "delete_selected_title": "선택 기록 삭제",
+    "delete_selected_message": "선택된 {count}개의 기록을 삭제하시겠습니까?"
+  },
+  "tooltip": {
+    "vocabulary": "어휘집",
+    "word_count": "단어 수",
+    "unit_count": "개",
+    "study_mode": "학습 모드",
+    "display_order": "표시 순서",
+    "progress": "진행률",
+    "unit_percent": "%",
+    "selected_filters": "선택된 필터",
+    "all_filters": "(모든 필터)",
+    "pos_filter": "품사 필터",
+    "type_filter": "타입 필터",
+    "target_mode_target": "목표어 우선",
+    "target_mode_reference": "참조어 우선",
+    "target_mode_random": "랜덤"
+  }
+}

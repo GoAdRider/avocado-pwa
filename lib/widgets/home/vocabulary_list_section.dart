@@ -3,8 +3,7 @@ import 'dart:async';
 import '../../services/home/vocabulary_list/vocabulary_list_service.dart';
 import '../../services/home/vocabulary_list/vocabulary_export_service.dart';
 import '../../services/common/vocabulary_service.dart';
-import '../../utils/strings/home_strings.dart';
-import '../../utils/strings/base_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 import '../../utils/themes/colors.dart';
 import '../dialogs/add_vocabulary_dialog.dart';
 
@@ -134,30 +133,33 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
 
   @override
   Widget build(BuildContext context) {
-    print(
-        '🔍 VocabularyListSection build: _isLoading=$_isLoading, _currentState=${_currentState?.vocabularyFiles.length ?? 'null'}');
-    
-    if (_currentState != null) {
-      print('🔍 상태 세부정보: 어휘집=${_currentState!.vocabularyFiles.length}개, 선택=${_currentState!.selectedFiles.length}개, 다중선택=${_currentState!.isMultiSelectMode}');
-    }
+    return ListenableBuilder(
+      listenable: LanguageNotifier.instance,
+      builder: (context, _) {
+        print(
+            '🔍 VocabularyListSection build: _isLoading=$_isLoading, _currentState=${_currentState?.vocabularyFiles.length ?? 'null'}');
+        
+        if (_currentState != null) {
+          print('🔍 상태 세부정보: 어휘집=${_currentState!.vocabularyFiles.length}개, 선택=${_currentState!.selectedFiles.length}개, 다중선택=${_currentState!.isMultiSelectMode}');
+        }
 
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
+        if (_isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    // 데이터가 아직 로드되지 않았다면 로딩 표시
-    if (_currentState == null) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('어휘집 목록을 불러오는 중...'),
-          ],
-        ),
-      );
-    }
+        // 데이터가 아직 로드되지 않았다면 로딩 표시
+        if (_currentState == null) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('어휘집 목록을 불러오는 중...'),
+              ],
+            ),
+          );
+        }
 
     // 에러 상태 표시
     if (_currentState!.hasError) {
@@ -197,17 +199,19 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionHeader(),
-        const SizedBox(height: 16),
-        _buildVocabularyInfoGuide(),
-        const SizedBox(height: 16),
-        _buildSelectedStatsAndActions(),
-        const SizedBox(height: 16),
-        _buildVocabularyGrid(),
-      ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionHeader(),
+            const SizedBox(height: 16),
+            _buildVocabularyInfoGuide(),
+            const SizedBox(height: 16),
+            _buildSelectedStatsAndActions(),
+            const SizedBox(height: 16),
+            _buildVocabularyGrid(),
+          ],
+        );
+      },
     );
   }
 
@@ -216,7 +220,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return Row(
       children: [
         Text(
-          HomeStrings.vocabularyListTitle,
+          tr('section.title', namespace: 'home/vocabulary_list'),
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -361,8 +365,8 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
                 const SizedBox(width: 6),
                 Text(
                   state.isMultiSelectMode
-                      ? HomeStrings.multiSelectMode
-                      : HomeStrings.singleSelectMode,
+                      ? tr('mode.multi_select', namespace: 'home/vocabulary_list')
+                      : tr('mode.single_select', namespace: 'home/vocabulary_list'),
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -384,7 +388,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _listService.selectAll,
       icon: Icons.select_all_rounded,
-      label: HomeStrings.selectAll,
+      label: tr('actions.select_all', namespace: 'home/vocabulary_list'),
       color: AppColors.accent,
       isOutlined: true,
     );
@@ -395,7 +399,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _listService.unselectAll,
       icon: Icons.clear_rounded,
-      label: HomeStrings.unselectAll,
+      label: tr('actions.unselect_all', namespace: 'home/vocabulary_list'),
       color: AppColors.textSecondary,
       isOutlined: true,
     );
@@ -406,7 +410,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _showDeleteConfirmDialog,
       icon: Icons.delete_rounded,
-      label: HomeStrings.deleteButton,
+      label: tr('actions.delete_button', namespace: 'home/vocabulary_list'),
       color: AppColors.error,
     );
   }
@@ -416,7 +420,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _exportVocabularies,
       icon: Icons.file_download_rounded,
-      label: HomeStrings.exportButton,
+      label: tr('actions.export_button', namespace: 'home/vocabulary_list'),
       color: AppColors.accent,
     );
   }
@@ -426,7 +430,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _resetWrongCounts,
       icon: Icons.refresh_rounded,
-      label: HomeStrings.resetWrongCountsButton,
+      label: tr('actions.reset_wrong_counts_button', namespace: 'home/vocabulary_list'),
       color: AppColors.warning,
     );
   }
@@ -436,7 +440,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     return _buildActionButton(
       onPressed: _resetFavorites,
       icon: Icons.star_border_rounded,
-      label: HomeStrings.resetFavoritesButton,
+      label: tr('actions.reset_favorites_button', namespace: 'home/vocabulary_list'),
       color: AppColors.purple,
     );
   }
@@ -506,6 +510,13 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     final state = _currentState;
     if (state == null || !state.hasSelection) return const SizedBox.shrink();
 
+    // 통계가 계산 중일 때 (빈 통계) 로딩 표시
+    final stats = state.selectedStats;
+    final isCalculating = stats.totalWords == 0 && 
+                          stats.favoriteWords == 0 && 
+                          stats.wrongWords == 0 && 
+                          stats.wrongCount == 0;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -516,14 +527,34 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
           width: 1,
         ),
       ),
-      child: Text(
-        '📝${state.selectedStats.totalWords} ⭐${state.selectedStats.favoriteWords} ❌${state.selectedStats.wrongWords} 🔢${state.selectedStats.wrongCount}',
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppColors.primary,
-        ),
-      ),
+      child: isCalculating 
+        ? Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '계산 중...',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.primary.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          )
+        : Text(
+            '📝${stats.totalWords} ⭐${stats.favoriteWords} ❌${stats.wrongWords} 🔢${stats.wrongCount}',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            ),
+          ),
     );
   }
 
@@ -554,7 +585,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              HomeStrings.vocabInfoGuide,
+              tr('guide.vocab_info', namespace: 'home/vocabulary_list'),
               style: const TextStyle(
                 fontSize: 13,
                 color: Colors.white,
@@ -614,16 +645,22 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     );
   }
 
-  /// 개별 어휘집 카드 (세련된 디자인)
+  /// 개별 어휘집 카드 (성능 최적화 버전)
   Widget _buildVocabularyCard({
     required VocabularyFileInfo vocabulary,
     required bool isSelected,
     required bool showSelection,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
+    // 성능 최적화: AnimatedContainer 제거, Material/InkWell 최적화
+    return GestureDetector(
+      onTap: () {
+        print('🔧 PERF: Card tap - immediate response');
+        _listService.toggleVocabularySelection(vocabulary.fileName);
+      },
+      onLongPress: () => _listService.toggleVocabularySelection(vocabulary.fileName),
       child: Container(
+        height: 125,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -635,55 +672,40 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
             width: isSelected ? 2 : 1,
           ),
         ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: () => _listService.toggleVocabularySelection(vocabulary.fileName),
-            onLongPress: () => _listService.toggleVocabularySelection(vocabulary.fileName),
-            borderRadius: BorderRadius.circular(16),
-            splashColor: AppColors.ripplePrimary,
-            highlightColor: AppColors.hoverPrimary,
-            child: Container(
-              height: 125,
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 헤더 (이름만 - 선택은 색깔과 테두리로 표시)
-                  Text(
-                    vocabulary.displayName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                      height: 1.2,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  // 통계 정보 (2x2 그리드) - 고정 높이로 overflow 방지
-                  SizedBox(
-                    height: 50,
-                    child: _buildStatsGrid(vocabulary),
-                  ),
-                  const SizedBox(height: 4),
-                  // 날짜 (중앙 정렬)
-                  Center(
-                    child: Text(
-                      vocabulary.importedDateString,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textTertiary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 헤더 (이름만 - 선택은 색깔과 테두리로 표시)
+            Text(
+              vocabulary.displayName,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                height: 1.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 6),
+            // 통계 정보 (2x2 그리드) - 고정 높이로 overflow 방지
+            SizedBox(
+              height: 50,
+              child: _buildStatsGrid(vocabulary),
+            ),
+            const SizedBox(height: 4),
+            // 날짜 (중앙 정렬)
+            Center(
+              child: Text(
+                vocabulary.importedDateString,
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -794,26 +816,31 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  HomeStrings.addNewVocab.split('\n')[0],
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
-                    height: 1.2,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  HomeStrings.addNewVocab.split('\n')[1],
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+                ...() {
+                  final lines = tr('guide.add_new_vocab', namespace: 'home/vocabulary_list').split('\n');
+                  return [
+                    Text(
+                      lines.isNotEmpty ? lines[0] : tr('guide.add_new_vocab', namespace: 'home/vocabulary_list'),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      lines.length > 1 ? lines[1] : '',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ];
+                }(),
               ],
             ),
           ),
@@ -826,13 +853,42 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
 
   /// 새 어휘집 추가 다이얼로그
   void _showAddVocabularyDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => const AddVocabularyDialog(),
-    );
+    print('🔧 DEBUG: _showAddVocabularyDialog 호출됨');
+    
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (context) {
+          print('🔧 DEBUG: Dialog builder 호출됨');
+          return const AddVocabularyDialog();
+        },
+      );
 
-    if (result == true) {
-      await _listService.refreshVocabularyList();
+      print('🔧 DEBUG: Dialog 결과: $result');
+      
+      if (result == true) {
+        print('🔧 DEBUG: 어휘집 목록 새로고침 시작');
+        await _listService.refreshVocabularyList();
+        print('🔧 DEBUG: 어휘집 목록 새로고침 완료');
+        
+        // 강제로 setState를 호출하여 UI 즉시 업데이트
+        if (mounted) {
+          setState(() {
+            _currentState = _listService.currentState;
+          });
+          print('🔧 DEBUG: setState로 강제 UI 업데이트 완료');
+          
+          // 부모에게 선택 변경 알림 (필터 업데이트를 위해)
+          if (widget.onSelectionChanged != null) {
+            final currentSelectedFiles = _currentState?.selectedFiles ?? {};
+            widget.onSelectionChanged!(currentSelectedFiles);
+            print('🔧 DEBUG: 추가 후 onSelectionChanged 콜백 호출: ${currentSelectedFiles.length}개 선택');
+          }
+        }
+      }
+    } catch (e, stackTrace) {
+      print('❌ ERROR: AddVocabularyDialog 표시 중 오류: $e');
+      print('❌ StackTrace: $stackTrace');
     }
   }
 
@@ -841,12 +897,20 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.helpTitle),
-        content: Text(HomeStrings.vocabularyListHelp),
+        title: Text(tr('dialog.help_title', namespace: 'home/vocabulary_list')),
+        content: SizedBox(
+          width: 350,
+          child: SingleChildScrollView(
+            child: Text(
+              tr('dialog.help_content', namespace: 'home/vocabulary_list'),
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(BaseStrings.close),
+            child: Text(tr('dialog.close')),
           ),
         ],
       ),
@@ -861,17 +925,17 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.deleteConfirmTitle),
-        content: Text(HomeStrings.deleteConfirmMessage(state.selectedCount)),
+        title: Text(tr('dialog.delete_confirm_title', namespace: 'home/vocabulary_list')),
+        content: Text(tr('dialog.delete_confirm_message', namespace: 'home/vocabulary_list', params: {'count': state.selectedCount})),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(BaseStrings.cancel),
+            child: Text(tr('dialog.cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(HomeStrings.deleteButton),
+            child: Text(tr('actions.delete_button', namespace: 'home/vocabulary_list')),
           ),
         ],
       ),
@@ -880,9 +944,22 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     if (confirmed == true) {
       final success = await _listService.deleteSelectedVocabularies();
       if (success && mounted) {
+        // 강제로 setState를 호출하여 UI 즉시 업데이트
+        setState(() {
+          _currentState = _listService.currentState;
+        });
+        print('🔧 DEBUG: 삭제 후 setState로 강제 UI 업데이트 완료');
+        
+        // 부모에게 선택 변경 알림 (필터 초기화를 위해)
+        if (widget.onSelectionChanged != null) {
+          final currentSelectedFiles = _currentState?.selectedFiles ?? {};
+          widget.onSelectionChanged!(currentSelectedFiles);
+          print('🔧 DEBUG: 삭제 후 onSelectionChanged 콜백 호출: ${currentSelectedFiles.length}개 선택');
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(HomeStrings.deleteSuccessMessage),
+            content: Text(tr('dialog.delete_success_message', namespace: 'home/vocabulary_list')),
             backgroundColor: Colors.green,
           ),
         );
@@ -902,7 +979,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(HomeStrings.exportSuccessMessage),
+          content: Text(tr('dialog.export_success_message', namespace: 'home/vocabulary_list')),
           backgroundColor: Colors.green,
         ),
       );
@@ -917,17 +994,17 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.resetWrongCountsTitle),
-        content: Text(HomeStrings.resetWrongCountsMessage(state.selectedCount)),
+        title: Text(tr('dialog.reset_wrong_counts_title', namespace: 'home/vocabulary_list')),
+        content: Text(tr('dialog.reset_wrong_counts_message', namespace: 'home/vocabulary_list', params: {'count': state.selectedCount})),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(BaseStrings.cancel),
+            child: Text(tr('dialog.cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: Text(HomeStrings.resetButton),
+            child: Text(tr('actions.reset_button', namespace: 'home/vocabulary_list')),
           ),
         ],
       ),
@@ -940,7 +1017,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(HomeStrings.resetWrongCountsSuccessMessage),
+            content: Text(tr('dialog.reset_wrong_counts_success', namespace: 'home/vocabulary_list')),
             backgroundColor: Colors.green,
           ),
         );
@@ -957,17 +1034,17 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(HomeStrings.resetFavoritesTitle),
-        content: Text(HomeStrings.resetFavoritesMessage(state.selectedCount)),
+        title: Text(tr('dialog.reset_favorites_title', namespace: 'home/vocabulary_list')),
+        content: Text(tr('dialog.reset_favorites_message', namespace: 'home/vocabulary_list', params: {'count': state.selectedCount})),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: Text(BaseStrings.cancel),
+            child: Text(tr('dialog.cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.purple),
-            child: Text(HomeStrings.resetButton),
+            child: Text(tr('actions.reset_button', namespace: 'home/vocabulary_list')),
           ),
         ],
       ),
@@ -980,7 +1057,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(HomeStrings.resetFavoritesSuccessMessage),
+            content: Text(tr('dialog.reset_favorites_success', namespace: 'home/vocabulary_list')),
             backgroundColor: Colors.green,
           ),
         );

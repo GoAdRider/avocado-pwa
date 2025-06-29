@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../utils/strings/toggle_strings.dart';
-import '../../utils/strings/base_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class ShortcutDialog extends StatefulWidget {
   const ShortcutDialog({super.key});
@@ -52,7 +51,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(BaseStrings.saveSuccess),
+        content: Text(tr('dialog.save_success')),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -88,8 +87,8 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_isKeyInUse(newKey)
-                ? ToggleStrings.keyConflict
-                : ToggleStrings.invalidKey),
+                ? tr('key_conflict', namespace: 'dialogs/shortcuts')
+                : tr('invalid_key', namespace: 'dialogs/shortcuts')),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.red,
           ),
@@ -242,7 +241,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    ToggleStrings.dialogTitle,
+                    tr('title', namespace: 'dialogs/shortcuts'),
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -297,7 +296,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
           ),
-          child: Text(ToggleStrings.resetAllShortcuts),
+          child: Text(tr('reset_all_shortcuts', namespace: 'dialogs/shortcuts')),
         ),
       ],
     );
@@ -314,7 +313,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            ToggleStrings.systemShortcuts,
+            tr('system_shortcuts', namespace: 'dialogs/shortcuts'),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -322,11 +321,11 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           ),
           const SizedBox(height: 12),
           _buildShortcutItem(
-              ToggleStrings.toggleEditKey, ToggleStrings.toggleEditDesc, false),
+              tr('toggle_edit_key', namespace: 'dialogs/shortcuts'), tr('toggle_edit_desc', namespace: 'dialogs/shortcuts'), false),
           _buildShortcutItem(
-              ToggleStrings.studyEndKey, ToggleStrings.studyEndDesc, false),
+              tr('study_end_key', namespace: 'dialogs/shortcuts'), tr('study_end_desc', namespace: 'dialogs/shortcuts'), false),
           _buildShortcutItem(
-              ToggleStrings.escapeKey, ToggleStrings.escapeDesc, false),
+              tr('escape_key', namespace: 'dialogs/shortcuts'), tr('escape_desc', namespace: 'dialogs/shortcuts'), false),
         ],
       ),
     );
@@ -346,7 +345,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                ToggleStrings.cardShortcuts,
+                tr('card_shortcuts', namespace: 'dialogs/shortcuts'),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -354,12 +353,12 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
               ),
               TextButton(
                 onPressed: _resetCardShortcuts,
-                child: Text(ToggleStrings.resetCardShortcuts),
+                child: Text(tr('reset_card_shortcuts', namespace: 'dialogs/shortcuts')),
               ),
             ],
           ),
           Text(
-            ToggleStrings.cardShortcutsScope,
+            tr('card_shortcuts_scope', namespace: 'dialogs/shortcuts'),
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 12,
@@ -367,21 +366,21 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           ),
           const SizedBox(height: 12),
           _buildEditableShortcutItem('card_flip', _cardShortcuts['card_flip']!,
-              ToggleStrings.cardFlipDesc),
+              tr('card_flip_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('previous_card',
-              _cardShortcuts['previous_card']!, ToggleStrings.previousCardDesc),
+              _cardShortcuts['previous_card']!, tr('previous_card_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('next_card', _cardShortcuts['next_card']!,
-              ToggleStrings.nextCardDesc),
+              tr('next_card_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem(
               'favorite_toggle',
               _cardShortcuts['favorite_toggle']!,
-              ToggleStrings.favoriteToggleDesc),
+              tr('favorite_toggle_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('detail_toggle',
-              _cardShortcuts['detail_toggle']!, ToggleStrings.detailToggleDesc),
+              _cardShortcuts['detail_toggle']!, tr('detail_toggle_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem(
-              'shuffle', _cardShortcuts['shuffle']!, ToggleStrings.shuffleDesc),
+              'shuffle', _cardShortcuts['shuffle']!, tr('shuffle_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem(
-              'remove', _cardShortcuts['remove']!, ToggleStrings.removeDesc),
+              'remove', _cardShortcuts['remove']!, tr('remove_desc', namespace: 'dialogs/shortcuts')),
         ],
       ),
     );
@@ -401,7 +400,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                ToggleStrings.gameShortcuts,
+                tr('game_shortcuts', namespace: 'dialogs/shortcuts'),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -409,12 +408,12 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
               ),
               TextButton(
                 onPressed: _resetGameShortcuts,
-                child: Text(ToggleStrings.resetGameShortcuts),
+                child: Text(tr('reset_game_shortcuts', namespace: 'dialogs/shortcuts')),
               ),
             ],
           ),
           Text(
-            ToggleStrings.gameShortcutsScope,
+            tr('game_shortcuts_scope', namespace: 'dialogs/shortcuts'),
             style: TextStyle(
               color: Colors.grey.shade600,
               fontSize: 12,
@@ -422,17 +421,17 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           ),
           const SizedBox(height: 12),
           _buildEditableShortcutItem('beginner_hint',
-              _gameShortcuts['beginner_hint']!, ToggleStrings.beginnerHintDesc),
+              _gameShortcuts['beginner_hint']!, tr('beginner_hint_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem(
               'intermediate_hint',
               _gameShortcuts['intermediate_hint']!,
-              ToggleStrings.intermediateHintDesc),
+              tr('intermediate_hint_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('advanced_hint',
-              _gameShortcuts['advanced_hint']!, ToggleStrings.advancedHintDesc),
+              _gameShortcuts['advanced_hint']!, tr('advanced_hint_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('game_pause',
-              _gameShortcuts['game_pause']!, ToggleStrings.gamePauseDesc),
+              _gameShortcuts['game_pause']!, tr('game_pause_desc', namespace: 'dialogs/shortcuts')),
           _buildEditableShortcutItem('answer_submit',
-              _gameShortcuts['answer_submit']!, ToggleStrings.answerSubmitDesc),
+              _gameShortcuts['answer_submit']!, tr('answer_submit_desc', namespace: 'dialogs/shortcuts')),
         ],
       ),
     );
@@ -484,7 +483,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
             ),
             child: Text(
               isCurrentlyEditing
-                  ? ToggleStrings.editingKey
+                  ? tr('editing_key', namespace: 'dialogs/shortcuts')
                   : _formatKeyDisplay(currentKey),
               style: TextStyle(
                 fontFamily: 'monospace',
@@ -499,7 +498,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           TextButton(
             onPressed:
                 isCurrentlyEditing ? null : () => _startEditingShortcut(keyId),
-            child: Text(ToggleStrings.editButton),
+            child: Text(tr('edit_button', namespace: 'dialogs/shortcuts')),
           ),
         ],
       ),

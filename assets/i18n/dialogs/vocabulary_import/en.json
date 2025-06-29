@@ -1,0 +1,49 @@
+{
+  "title": "Add New Vocabulary",
+  "drag_drop_active": "Drop files here",
+  "drag_multiple_files": "Drag multiple CSV files here",
+  "csv_only_support": "Only .csv files are supported",
+  "or_divider": "or",
+  "select_files": "Select Files",
+  "processing_file": "Processing file...",
+  "importing_files": "Importing...",
+  "import_files_button": "Import {count} files",
+  "file_info": {
+    "selected_files": "Selected files: {count}",
+    "total_words": "Total words: {count}",
+    "file_list": "File list: {list}",
+    "data_preview": "Data preview:",
+    "preview_title_with_count": "File preview ({count})"
+  },
+  "errors": {
+    "empty_file": "Empty file",
+    "missing_required_columns": "Missing required columns. Please ensure TargetVoca and ReferenceVoca columns exist.",
+    "no_valid_data": "No valid data",
+    "file_selection": "File selection error: {error}",
+    "csv_files_only": "Only CSV files can be uploaded.",
+    "no_processable_files": "No processable files.",
+    "partial_error_message": "Some files encountered errors\n\n❌ Error details:\n{errors}\n\n✅ Success: {successCount} words imported successfully",
+    "file_processing": "File processing error: {error}",
+    "error_keyword": "Error"
+  },
+  "duplicates": {
+    "title": "Duplicate Vocabulary Found",
+    "message": "Vocabulary \"{name}\" already exists.\nWhat would you like to do?",
+    "multiple_vocabularies": "{count} vocabularies",
+    "duplicate_list": "Duplicate vocabularies: {list}",
+    "replace_vocabulary": "Replace existing vocabulary",
+    "merge_vocabulary": "Merge with existing vocabulary",
+    "rename_vocabulary": "Save with new name"
+  },
+  "success": {
+    "vocab_added": "Vocabulary has been successfully added!"
+  },
+  "help": {
+    "title": "CSV File Format Guide",
+    "header_rule": "• First row must be headers",
+    "required_columns": "• Required columns: TargetVoca, ReferenceVoca",
+    "optional_columns": "• Optional columns: POS, Type, TargetPronunciation, TargetDesc, ReferenceDesc, TargetEx, ReferenceEx, Favorites",
+    "encoding": "• Please save with UTF-8 encoding",
+    "multiple_files": "• You can select or drag multiple CSV files at once."
+  }
+}

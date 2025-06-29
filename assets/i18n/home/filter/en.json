@@ -1,0 +1,22 @@
+{
+  "section": {
+    "title": "POS/Type Filters"
+  },
+  "ui": {
+    "pos_filter": "POS Filter",
+    "type_filter": "Type Filter",
+    "selected_filters": "Selected Filters",
+    "filter_select_vocab_first": "Please select a vocabulary first.",
+    "pos_not_available": "No POS Info",
+    "type_not_available": "No Type Info",
+    "no_selection_guide": "Please select a vocabulary first to see {filter_type}."
+  },
+  "stats": {
+    "filtered_words": "Filtered words: {words} | Favorites: {favorites} | Wrong words: {wrong} | Wrong count: {wrongCount}"
+  },
+  "tooltip": {
+    "all_filters": "All filters help",
+    "pos_filter": "Filter by part of speech",
+    "type_filter": "Filter by type"
+  }
+}

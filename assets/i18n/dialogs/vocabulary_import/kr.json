@@ -1,0 +1,49 @@
+{
+  "title": "새로운 어휘집 추가하기",
+  "drag_drop_active": "파일을 여기에 놓으세요",
+  "drag_multiple_files": "여러 CSV 파일을 여기에 드래그하세요",
+  "csv_only_support": ".csv 파일만 지원됩니다",
+  "or_divider": "또는",
+  "select_files": "파일 선택",
+  "processing_file": "파일을 처리하고 있습니다...",
+  "importing_files": "가져오는 중...",
+  "import_files_button": "{count}개 파일 가져오기",
+  "file_info": {
+    "selected_files": "선택된 파일: {count}개",
+    "total_words": "총 단어 수: {count}개",
+    "file_list": "파일 목록: {list}",
+    "data_preview": "데이터 미리보기:",
+    "preview_title_with_count": "파일 미리보기 ({count}개)"
+  },
+  "errors": {
+    "empty_file": "빈 파일입니다",
+    "missing_required_columns": "필수 컬럼이 누락되었습니다. TargetVoca, ReferenceVoca 컬럼이 있는지 확인해주세요.",
+    "no_valid_data": "유효한 데이터가 없습니다",
+    "file_selection": "파일 선택 오류: {error}",
+    "csv_files_only": "CSV 파일만 업로드 가능합니다.",
+    "no_processable_files": "처리 가능한 파일이 없습니다.",
+    "partial_error_message": "일부 파일에서 오류가 발생했습니다\n\n❌ 오류 내용:\n{errors}\n\n✅ 성공: {successCount}개 단어를 성공적으로 가져왔습니다",
+    "file_processing": "파일 처리 오류: {error}",
+    "error_keyword": "오류"
+  },
+  "duplicates": {
+    "title": "중복 어휘집 발견",
+    "message": "\"{name}\" 어휘집이 이미 존재합니다.\n어떻게 하시겠습니까?",
+    "multiple_vocabularies": "{count}개 어휘집",
+    "duplicate_list": "중복된 어휘집: {list}",
+    "replace_vocabulary": "기존 어휘집 교체",
+    "merge_vocabulary": "기존 어휘집에 병합",
+    "rename_vocabulary": "새 이름으로 저장"
+  },
+  "success": {
+    "vocab_added": "어휘집이 성공적으로 추가되었습니다!"
+  },
+  "help": {
+    "title": "CSV 파일 형식 안내",
+    "header_rule": "• 첫 번째 줄은 헤더여야 합니다",
+    "required_columns": "• 필수 컬럼: TargetVoca, ReferenceVoca",
+    "optional_columns": "• 선택 컬럼: POS, Type, TargetPronunciation, TargetDesc, ReferenceDesc, TargetEx, ReferenceEx, Favorites",
+    "encoding": "• UTF-8 인코딩으로 저장해주세요",
+    "multiple_files": "• 한 번에 여러 CSV 파일을 선택하거나 드래그할 수 있습니다."
+  }
+}

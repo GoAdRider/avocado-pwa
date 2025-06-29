@@ -1,0 +1,37 @@
+{
+  "section": {
+    "title": "Study Status",
+    "study_mode": "Study Mode Settings",
+    "learning_method": "Learning Method Selection"
+  },
+  "study_mode": {
+    "target_voca": "TargetVoca",
+    "reference_voca": "ReferenceVoca",
+    "random_mode": "Random"
+  },
+  "learning_method": {
+    "card_study": "Word Card",
+    "favorite_review": "Favorites",
+    "game_study": "Game",
+    "wrong_word_study": "Wrong Words"
+  },
+  "stats": {
+    "todays_goal": "Today's Goal",
+    "detailed_stats": "Detailed Statistics",
+    "total_words": "Total Words",
+    "total_favorites": "Favorites",
+    "total_wrong_words": "Wrong Words",
+    "total_wrong_count": "Wrong Count",
+    "average_accuracy": "Average Accuracy",
+    "study_streak": "Study Streak",
+    "daily_new_words": "New Words",
+    "daily_review_words": "Review Words",
+    "daily_perfect_answers": "Perfect Answers",
+    "weekly_goal_label": "Weekly Goal",
+    "monthly_goal_label": "Monthly Goal"
+  },
+  "help": {
+    "title": "Study Mode Settings Help",
+    "content": "Study mode settings determine which language will be shown first during learning.\n\n🃏 Word Card Study\n• TargetVoca selection: Card front shows TargetVoca side every time\n• ReferenceVoca selection: Card front shows ReferenceVoca side every time\n• Random: Random language is shown on card front for each card\n\n🎮 Game Study\n• If TargetVoca is selected, you must submit TargetVoca as the answer\n• If ReferenceVoca is selected, you must submit ReferenceVoca as the answer\n• Random: Random answer language is determined for each question\n\nThis setting applies to word cards, favorites, wrong words, and games."
+  }
+}

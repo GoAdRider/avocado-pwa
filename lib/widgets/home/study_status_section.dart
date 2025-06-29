@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../utils/strings/base_strings.dart';
-import '../../utils/strings/home_strings.dart';
-import '../../utils/language_provider.dart';
+import '../../utils/i18n/simple_i18n.dart';
+import '../dialogs/daily_goals_dialog.dart';
 
 class StudyStatusSection extends StatefulWidget {
   const StudyStatusSection({super.key});
@@ -11,24 +10,19 @@ class StudyStatusSection extends StatefulWidget {
 }
 
 class _StudyStatusSectionState extends State<StudyStatusSection> {
-  // 목표 설정 상태 변수들
-  int _dailyNewWordsGoal = 20;
-  int _dailyReviewWordsGoal = 10;
-  int _dailyPerfectAnswersGoal = 12;
-  int _weeklyGoal = 300;
-  int _monthlyGoal = 1200;
 
   @override
   Widget build(BuildContext context) {
-    LanguageProvider.of(context);
-    
-    return Column(
+    return ListenableBuilder(
+      listenable: LanguageNotifier.instance,
+      builder: (context, _) {
+        return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Text(
-              HomeStrings.sectionStudyStatus,
+              tr('section.title', namespace: 'home/study_status'),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const Spacer(),
@@ -43,7 +37,7 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  HomeStrings.todaysGoal,
+                  tr('stats.todays_goal', namespace: 'home/study_status'),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
@@ -60,7 +54,7 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  HomeStrings.detailedStats,
+                  tr('stats.detailed_stats', namespace: 'home/study_status'),
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
@@ -73,30 +67,32 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
           children: [
             Expanded(
                 child: _buildStatCard(
-                    HomeStrings.totalWords, '1,234${BaseStrings.wordsUnit}')),
+                    tr('stats.total_words', namespace: 'home/study_status'), '1,234${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    HomeStrings.totalFavorites, '45${BaseStrings.wordsUnit}')),
+                    tr('stats.total_favorites', namespace: 'home/study_status'), '45${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    HomeStrings.totalWrongWords, '0${BaseStrings.wordsUnit}')),
+                    tr('stats.total_wrong_words', namespace: 'home/study_status'), '0${tr('units.words')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    HomeStrings.totalWrongCount, '0${BaseStrings.countUnit}')),
+                    tr('stats.total_wrong_count', namespace: 'home/study_status'), '0${tr('units.count')}')),
             const SizedBox(width: 8),
             Expanded(
-                child: _buildStatCard(HomeStrings.averageAccuracy,
-                    '85.2${BaseStrings.percentUnit}')),
+                child: _buildStatCard(tr('stats.average_accuracy', namespace: 'home/study_status'),
+                    '85.2${tr('units.percent')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
-                    HomeStrings.studyStreak, '7${BaseStrings.daysUnit}')),
+                    tr('stats.study_streak', namespace: 'home/study_status'), '7${tr('units.days')}')),
           ],
         ),
       ],
+        );
+      },
     );
   }
 
@@ -131,89 +127,9 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(HomeStrings.todaysGoal),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _buildGoalItem(
-                  '📝 ${HomeStrings.dailyNewWords}',
-                  _dailyNewWordsGoal,
-                  (value) => setState(() => _dailyNewWordsGoal = value),
-                  BaseStrings.wordsUnit,
-                ),
-                _buildGoalItem(
-                  '🔄 ${HomeStrings.dailyReviewWords}',
-                  _dailyReviewWordsGoal,
-                  (value) => setState(() => _dailyReviewWordsGoal = value),
-                  BaseStrings.wordsUnit,
-                ),
-                _buildGoalItem(
-                  '✅ ${HomeStrings.dailyPerfectAnswers}',
-                  _dailyPerfectAnswersGoal,
-                  (value) => setState(() => _dailyPerfectAnswersGoal = value),
-                  BaseStrings.wordsUnit,
-                ),
-                _buildGoalItem(
-                  '📅 ${HomeStrings.weeklyGoalLabel}',
-                  _weeklyGoal,
-                  (value) => setState(() => _weeklyGoal = value),
-                  BaseStrings.wordsUnit,
-                ),
-                _buildGoalItem(
-                  '📆 ${HomeStrings.monthlyGoalLabel}',
-                  _monthlyGoal,
-                  (value) => setState(() => _monthlyGoal = value),
-                  BaseStrings.wordsUnit,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(BaseStrings.close),
-            ),
-          ],
-        );
+        return const DailyGoalsDialog();
       },
     );
   }
 
-  // 목표 설정 항목
-  Widget _buildGoalItem(
-    String title,
-    int value,
-    ValueChanged<int> onChanged,
-    String unit,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(title, style: const TextStyle(fontSize: 14)),
-          ),
-          SizedBox(
-            width: 80,
-            child: TextFormField(
-              initialValue: value.toString(),
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              decoration: InputDecoration(
-                suffixText: unit,
-                border: const OutlineInputBorder(),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              onChanged: (newValue) {
-                final intValue = int.tryParse(newValue) ?? value;
-                onChanged(intValue);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

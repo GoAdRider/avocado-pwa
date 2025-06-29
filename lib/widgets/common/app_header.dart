@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../utils/strings/base_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 import '../../services/home/vocabulary_list/vocabulary_list_service.dart';
 import '../../screens/study_screen.dart';
+import '../../screens/home_screen.dart';
 
 class AppHeader extends StatelessWidget {
   final bool isKoreanToEnglish;
@@ -58,15 +59,8 @@ class AppHeader extends StatelessWidget {
                   // 이미 홈화면이면 스크롤 최상단으로 이동
                   debugPrint('🏠 홈화면에서 로고 클릭 - 스크롤 최상단 이동');
                   try {
-                    // 스크롤 가능한 위젯이 있으면 최상단으로 이동
-                    final scrollable = Scrollable.maybeOf(context);
-                    if (scrollable != null) {
-                      await scrollable.position.animateTo(
-                        0.0,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOut,
-                      );
-                    }
+                    // HomeScreen의 전용 scrollToTop 메서드 사용
+                    HomeScreen.scrollToTop();
                   } catch (scrollError) {
                     debugPrint('🏠 스크롤 이동 중 오류: $scrollError');
                   }
@@ -124,7 +118,7 @@ class AppHeader extends StatelessWidget {
                 border: Border.all(color: Colors.grey),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(BaseStrings.editToggle,
+              child: Text(tr('header.edit_toggle'),
                   style: const TextStyle(fontSize: 14)),
             ),
           ),

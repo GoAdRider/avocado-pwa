@@ -1,0 +1,47 @@
+{
+  "section": {
+    "title": "Vocabulary List"
+  },
+  "mode": {
+    "single_select": "Single Select",
+    "multi_select": "Multi Select"
+  },
+  "actions": {
+    "select_all": "Select All",
+    "unselect_all": "Unselect All",
+    "delete_button": "Delete",
+    "export_button": "Export",
+    "reset_wrong_counts_button": "Reset Wrong Counts",
+    "reset_favorites_button": "Reset Favorites",
+    "reset_button": "Reset"
+  },
+  "guide": {
+    "vocab_info": "📝 Total Words ⭐ Favorites ❌ Wrong Words 🔢 Wrong Count 📅 Added Date",
+    "add_new_vocab": "Add New\nVocabulary"
+  },
+  "dialog": {
+    "help_title": "Vocabulary List Help",
+    "help_content": "You can select vocabularies to study or manage them.\n\n📁 CSV Data Format\n• Must be CSV file format\n• Required columns: TargetVoca, ReferenceVoca\n• Optional columns: POS, Type, TargetPronunciation, TargetDesc, ReferenceDesc, TargetEx, ReferenceEx, Favorites\n\n🎯 Column Description\n• TargetVoca: Language to learn (e.g., 사과)\n• ReferenceVoca: Language you understand (e.g., apple)\n• POS: Part of speech (e.g., noun, verb, adjective)\n• Type: Word type (e.g., general, important, difficult)\n• TargetPronunciation: Pronunciation guide (e.g., /saː.ɡwa/)\n• TargetDesc: Additional description in learning language\n• ReferenceDesc: Additional description in understanding language\n• TargetEx: Example sentence in learning language (e.g., 나는 사과를 먹는다)\n• ReferenceEx: Example sentence in understanding language (e.g., I eat an apple)\n• Favorites: Favorite status (true/false)\n\n💡 Language Classification Rules\n• Target related: Input the language to learn\n• Reference related: Input your native language or understandable language\n\n📋 Features\n• Single Select: Select only one vocabulary\n• Multi Select: Select multiple vocabularies together\n• Select All/Unselect All: Select/unselect all vocabularies at once\n• Delete: Completely delete selected vocabularies\n• Export: Export selected vocabularies to CSV files",
+    "delete_confirm_title": "Delete Vocabulary",
+    "delete_confirm_message": "Do you want to delete the selected {count} vocabularies?\nThis action cannot be undone.",
+    "delete_success_message": "Vocabularies have been successfully deleted.",
+    "export_success_message": "Vocabularies have been successfully exported.",
+    "reset_wrong_counts_title": "Reset Wrong Counts",
+    "reset_wrong_counts_message": "Do you want to reset all wrong counts of the selected {count} vocabularies to 0?",
+    "reset_wrong_counts_success": "Wrong counts have been successfully reset.",
+    "reset_favorites_title": "Reset Favorites",
+    "reset_favorites_message": "Do you want to unset all favorites of the selected {count} vocabularies?",
+    "reset_favorites_success": "Favorites have been successfully reset."
+  },
+  "errors": {
+    "no_vocab_selected_title": "No Vocabulary Selected",
+    "no_vocab_selected_message": "Please select a vocabulary first to start studying.",
+    "no_words_found_title": "No Words",
+    "no_words_found_message": "No words found matching the selected criteria. Please adjust the filters.",
+    "no_favorites_found_title": "No Favorites",
+    "no_favorites_found_message": "No words are set as favorites.",
+    "error_delete_vocabulary": "An error occurred while deleting vocabulary: {error}",
+    "error_reset_wrong_counts": "An error occurred while resetting wrong counts: {error}",
+    "error_reset_favorites": "An error occurred while resetting favorites: {error}"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "section": {
+    "title": "학습 현황",
+    "study_mode": "위주 학습 설정",
+    "learning_method": "학습 방법 선택"
+  },
+  "study_mode": {
+    "target_voca": "TargetVoca",
+    "reference_voca": "ReferenceVoca",
+    "random_mode": "Random"
+  },
+  "learning_method": {
+    "card_study": "단어카드",
+    "favorite_review": "즐겨찾기",
+    "game_study": "게임",
+    "wrong_word_study": "틀린단어"
+  },
+  "stats": {
+    "todays_goal": "오늘의 목표",
+    "detailed_stats": "상세 통계",
+    "total_words": "총 단어 수",
+    "total_favorites": "즐겨찾기",
+    "total_wrong_words": "틀린 단어",
+    "total_wrong_count": "틀린 횟수",
+    "average_accuracy": "평균 정답률",
+    "study_streak": "연속 학습",
+    "daily_new_words": "신규 단어",
+    "daily_review_words": "복습 단어",
+    "daily_perfect_answers": "완벽 정답",
+    "weekly_goal_label": "주간 목표",
+    "monthly_goal_label": "월간 목표"
+  },
+  "help": {
+    "title": "위주 학습 설정 도움말",
+    "content": "위주 학습 설정은 학습 중 우선적으로 보여질 언어를 결정합니다.\n\n🃏 단어카드 학습 시\n• TargetVoca 선택 시: 카드 앞면이 매번 TargetVoca 면으로 보여집니다\n• ReferenceVoca 선택 시: 카드 앞면이 매번 ReferenceVoca 면으로 보여집니다\n• Random: 카드마다 무작위로 앞면 언어가 결정됩니다\n\n🎮 게임 학습 시\n• TargetVoca로 선택했다면 TargetVoca를 답으로 제출해야 합니다\n• ReferenceVoca로 선택했다면 ReferenceVoca를 답으로 제출해야 합니다\n• Random: 문제마다 무작위로 답 언어가 결정됩니다\n\n이 설정은 단어카드, 즐겨찾기, 틀린단어, 게임 모든 학습에 적용됩니다."
+  }
+}

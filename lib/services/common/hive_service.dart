@@ -7,6 +7,7 @@ import '../../models/study_record.dart';
 import '../../models/daily_stats.dart';
 import '../../models/achievement.dart';
 import '../../models/personal_record.dart';
+import '../dialogs/daily_goals_service.dart';
 
 class HiveService {
   static const String _vocabularyWordsBox = 'vocabulary_words';
@@ -41,6 +42,9 @@ class HiveService {
 
     // 기본 데이터 초기화
     await _initializeDefaultData();
+    
+    // DailyGoalsService 초기화
+    await DailyGoalsService.instance.initialize();
   }
 
   /// 모든 박스 열기

@@ -1,0 +1,32 @@
+{
+  "section": {
+    "title": "Forgetting Curve Based Review"
+  },
+  "review_types": {
+    "smart_review": "Smart Review",
+    "urgent_review": "Urgent Review",
+    "recommended_review": "Recommended Review",
+    "preview_review": "Preview Review",
+    "forgotten_review": "Forgetting Risk"
+  },
+  "descriptions": {
+    "urgent_review": "Words that need immediate review",
+    "recommended_review": "Words good to review",
+    "preview_review": "Preview review words",
+    "forgotten_review": "Words at high risk of being forgotten"
+  },
+  "actions": {
+    "start_review": "Start Review"
+  },
+  "status": {
+    "no_review_words": "No words to review",
+    "coming_soon": "Coming Soon"
+  },
+  "study_modes": {
+    "urgent_review": "Urgent Review",
+    "recommended_review": "Recommended Review",
+    "leisure_review": "Leisure Review",
+    "forgetting_risk": "Forgetting Risk",
+    "smart_review": "Smart Review"
+  }
+}

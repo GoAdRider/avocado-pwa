@@ -1,0 +1,47 @@
+{
+  "study": {
+    "title": "단어카드 학습",
+    "words_shuffled": "단어가 섞였습니다",
+    "favorite_added": "즐겨찾기에 추가되었습니다",
+    "favorite_removed": "즐겨찾기에서 제거되었습니다",
+    "congratulations": "축하합니다!",
+    "study_completed": "학습이 완료되었습니다",
+    "return_to_home": "홈으로 돌아가기",
+    "continue_study": "학습 계속"
+  },
+  "modes": {
+    "card_study": "카드 학습",
+    "favorite_review": "즐겨찾기 복습",
+    "wrong_words_study": "틀린단어 복습",
+    "urgent_review": "긴급 복습",
+    "recommended_review": "추천 복습",
+    "leisure_review": "여유 복습",
+    "forgetting_risk": "망각 위험"
+  },
+  "info": {
+    "selected_vocabularies": "선택된 어휘집",
+    "vocabulary_count_suffix": "개",
+    "progress": "진행률",
+    "wrong_count_prefix": "틀린횟수: ",
+    "wrong_count_suffix": "회"
+  },
+  "content": {
+    "description_label": "설명",
+    "example_label": "예문",
+    "collapse_details": "접기",
+    "expand_details": "펼치기",
+    "no_words_available": "학습할 단어가 없습니다"
+  },
+  "controls": {
+    "previous": "이전",
+    "flip": "뒤집기",
+    "next": "다음",
+    "keyboard_guide": "키보드 가이드",
+    "favorite_filled": "즐겨찾기 설정됨",
+    "favorite_empty": "즐겨찾기 해제됨",
+    "shuffle": "섞기"
+  },
+  "progress": {
+    "text": "{current} / {total}"
+  }
+}

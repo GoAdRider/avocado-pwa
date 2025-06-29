@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../utils/strings/base_strings.dart';
+import '../../utils/i18n/simple_i18n.dart';
 
 class AppFooter extends StatelessWidget {
   final String? customQuote;
@@ -15,7 +15,7 @@ class AppFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     // 기본 명언들 (나중에 Quote 테이블에서 가져올 예정)
     final defaultQuotes = [
-      {'quote': BaseStrings.defaultQuote, 'author': 'aVocaDo'},
+      {'quote': tr('footer.default_quote'), 'author': 'aVocaDo'},
       {'quote': '작은 진전도 진전입니다.', 'author': 'aVocaDo'},
       {'quote': '꾸준함이 재능을 이깁니다.', 'author': 'aVocaDo'},
       {'quote': '오늘의 노력이 내일의 실력이 됩니다.', 'author': 'aVocaDo'},
