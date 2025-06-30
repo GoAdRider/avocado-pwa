@@ -365,7 +365,6 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       _updateSession(_session.copyWith(
         currentIndex: _session.currentIndex - 1,
         currentSide: prevSide,
-        showDetails: false,
       ));
       _startCardTimer(); // 새 카드로 이동 시 타이머 시작
     }
@@ -389,7 +388,6 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       _updateSession(_session.copyWith(
         currentIndex: _session.currentIndex + 1,
         currentSide: nextSide,
-        showDetails: false,
       ));
       _startCardTimer(); // 새 카드로 이동 시 타이머 시작
     } else if (_session.currentIndex == _session.words.length - 1) {
@@ -403,7 +401,6 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       currentSide: _session.currentSide == CardSide.front
           ? CardSide.back
           : CardSide.front,
-      showDetails: false,
     ));
   }
 
@@ -429,7 +426,6 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       words: shuffledWords,
       currentIndex: 0,
       currentSide: shuffledSide,
-      showDetails: false,
     ));
 
     // 섞기 완료 피드백
@@ -1174,41 +1170,89 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildMainContent(VocabularyWord word) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 메인 단어
-        Text(
-          _getCurrentMainWord(word),
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-              ),
-          textAlign: TextAlign.center,
-        ),
-
-        const SizedBox(height: 12),
-
-        // 발음 (앞면에만 표시)
-        if (_session.currentSide == CardSide.front &&
-            word.targetPronunciation != null)
-          Text(
-            '[${word.targetPronunciation}]',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    // 반응형 폰트 크기 계산
+    double mainFontSize = 32;
+    if (screenHeight < 500) {
+      mainFontSize = 20;
+    } else if (screenHeight < 600) {
+      mainFontSize = 24;
+    } else if (screenHeight < 700) {
+      mainFontSize = 28;
+    }
+    
+    // 화면 폭에 따른 추가 조정
+    if (screenWidth < 400) {
+      mainFontSize = mainFontSize * 0.8;
+    }
+    
+    // 펼친 상태에서는 폰트 크기 축소
+    if (_session.showDetails) {
+      mainFontSize = mainFontSize * 0.6; // 60%로 축소
+    }
+    
+    return Expanded(
+      child: Column(
+        children: [
+          // 메인 단어 영역 (펼친 상태에서는 압축됨)
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(
+              vertical: _session.showDetails ? 8 : 16,
+              horizontal: 16,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 메인 단어
+                Text(
+                  _getCurrentMainWord(word),
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: mainFontSize,
+                      ),
+                  textAlign: TextAlign.center,
+                  maxLines: _session.showDetails ? 1 : 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
-            textAlign: TextAlign.center,
+
+                // 발음 (앞면에만 표시)
+                if (_session.currentSide == CardSide.front &&
+                    word.targetPronunciation != null) ...[
+                  SizedBox(height: _session.showDetails ? 4 : 8),
+                  Text(
+                    '[${word.targetPronunciation}]',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.grey[600],
+                          fontStyle: FontStyle.italic,
+                          fontSize: mainFontSize * 0.5,
+                        ),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
           ),
 
-        // 상세 정보 (펼쳐진 상태일 때)
-        if (_session.showDetails) ...[
-          const SizedBox(height: 24),
-          Expanded(
-            child: _buildDetailsContent(word),
-          ),
+          // 구분선 (펼친 상태에서만 표시)
+          if (_session.showDetails) 
+            Container(
+              height: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.grey.withValues(alpha: 0.3),
+            ),
+
+          // 상세 정보 (펼쳐진 상태일 때)
+          if (_session.showDetails)
+            Expanded(
+              child: _buildDetailsContent(word),
+            ),
         ],
-      ],
+      ),
     );
   }
 
@@ -1226,19 +1270,86 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: SingleChildScrollView(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 둘 다 있을 때: 가로 2열 레이아웃
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = MediaQuery.of(context).size.width;
+            final isWideScreen = screenWidth > 600; // 600px 이상이면 가로 레이아웃
+            
             if ((description != null && description.isNotEmpty) && 
-                (example != null && example.isNotEmpty)) ...[
-              // 설명 섹션 (왼쪽)
-              Expanded(
-                flex: 1,
-                child: Column(
+                (example != null && example.isNotEmpty)) {
+              // 둘 다 있을 때: 화면 크기에 따른 반응형 레이아웃
+              if (isWideScreen) {
+                // 넓은 화면: 가로 2열
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            tr('content.description_label', namespace: 'word_card'),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[700],
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            description!,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 60,
+                      margin: const EdgeInsets.symmetric(horizontal: 16),
+                      color: Colors.grey.withValues(alpha: 0.3),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            tr('content.example_label', namespace: 'word_card'),
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue[700],
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                            ),
+                            child: Text(
+                              '"$example"',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.blue[800],
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                // 좁은 화면: 세로 배치
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // 설명 섹션
                     Text(
                       tr('content.description_label', namespace: 'word_card'),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1252,24 +1363,8 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
-              ),
-              
-              // 구분선 (중간)
-              Container(
-                width: 1,
-                height: 60,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                color: Colors.grey.withValues(alpha: 0.3),
-              ),
-              
-              // 예시 섹션 (오른쪽)
-              Expanded(
-                flex: 1,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
+                    const SizedBox(height: 16),
+                    // 예문 섹션
                     Text(
                       tr('content.example_label', namespace: 'word_card'),
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1295,69 +1390,70 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+            }
             
             // 설명만 있을 때
             if ((description != null && description.isNotEmpty) && 
-                (example == null || example.isEmpty))
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      tr('content.description_label', namespace: 'word_card'),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[700],
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      description!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
+                (example == null || example.isEmpty)) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    tr('content.description_label', namespace: 'word_card'),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              );
+            }
             
             // 예문만 있을 때
             if ((description == null || description.isEmpty) && 
-                (example != null && example.isNotEmpty))
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      tr('content.example_label', namespace: 'word_card'),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[700],
+                (example != null && example.isNotEmpty)) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    tr('content.example_label', namespace: 'word_card'),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                    ),
+                    child: Text(
+                      '"$example"',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: Colors.blue[800],
                           ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-                      ),
-                      child: Text(
-                        '"$example"',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.blue[800],
-                            ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
+                  ),
+                ],
+              );
+            }
+            
+            // 둘 다 없을 때 (빈 컨테이너)
+            return const SizedBox.shrink();
+          },
         ),
       ),
     );
@@ -1451,73 +1547,182 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                 ? KeyEventResult.handled
                 : KeyEventResult.ignored;
           },
-          child: Column(
-            children: [
-              // 학습 진행 상태 바
-              _buildProgressBar(),
-
-              // 메인 학습 영역
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      // 단어 카드
-                      Expanded(
-                        child: _buildStudyCard(),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // 네비게이션 버튼들
-                      Row(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final screenHeight = constraints.maxHeight;
+              final isVerySmallScreen = screenHeight < 400;
+              final isSmallScreen = screenHeight < 600;
+              
+              return Column(
+                children: [
+                  // 학습 진행 상태 바 (작은 화면에서는 압축)
+                  if (!isVerySmallScreen) _buildProgressBar(),
+                  
+                  if (isVerySmallScreen)
+                    // 극소 화면에서는 진행바를 최소화
+                    Container(
+                      height: 40,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: Row(
                         children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed:
-                                  _session.canGoPrevious ? _goToPrevious : null,
-                              child: Text(tr('controls.previous', namespace: 'word_card')),
-                            ),
+                          Text(
+                            '${_session.currentIndex + 1}/${_session.words.length}',
+                            style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: ElevatedButton(
-                              onPressed: _flipCard,
-                              child: Text(tr('controls.flip', namespace: 'word_card')),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _shuffleWords,
-                              child: Text(tr('controls.shuffle', namespace: 'word_card')),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: _goToNext,
-                              child: Text(tr('controls.next', namespace: 'word_card')),
+                            child: LinearProgressIndicator(
+                              value: (_session.currentIndex + 1) / _session.words.length,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Theme.of(context).primaryColor,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                    ),
 
-                      const SizedBox(height: 8),
-
-                      // 키보드 안내
-                      Text(
-                        tr('controls.keyboard_guide', namespace: 'word_card'),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                  // 메인 학습 영역 - 단어 카드 최우선
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(isSmallScreen ? 8.0 : 16.0),
+                      child: Column(
+                        children: [
+                          // 단어 카드 - 최소 높이 보장
+                          Expanded(
+                            flex: isSmallScreen ? 8 : 6, // 작은 화면에서는 더 많은 비율 할당
+                            child: Container(
+                              constraints: BoxConstraints(
+                                minHeight: isVerySmallScreen ? 200 : 300,
+                              ),
+                              child: _buildStudyCard(),
                             ),
-                        textAlign: TextAlign.center,
+                          ),
+
+                          SizedBox(height: isSmallScreen ? 8 : 16),
+
+                          // 네비게이션 버튼들 (작은 화면에서는 압축)
+                          if (!isVerySmallScreen)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed:
+                                        _session.canGoPrevious ? _goToPrevious : null,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isSmallScreen ? 8 : 12,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      tr('controls.previous', namespace: 'word_card'),
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _flipCard,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isSmallScreen ? 8 : 12,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      tr('controls.flip', namespace: 'word_card'),
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _shuffleWords,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isSmallScreen ? 8 : 12,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      tr('controls.shuffle', namespace: 'word_card'),
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _goToNext,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: isSmallScreen ? 8 : 12,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      tr('controls.next', namespace: 'word_card'),
+                                      style: TextStyle(
+                                        fontSize: isSmallScreen ? 12 : 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                          // 극소 화면에서는 간소화된 버튼
+                          if (isVerySmallScreen)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                IconButton(
+                                  onPressed: _session.canGoPrevious ? _goToPrevious : null,
+                                  icon: const Icon(Icons.chevron_left),
+                                  iconSize: 20,
+                                ),
+                                IconButton(
+                                  onPressed: _flipCard,
+                                  icon: const Icon(Icons.flip_to_back),
+                                  iconSize: 20,
+                                ),
+                                IconButton(
+                                  onPressed: _shuffleWords,
+                                  icon: const Icon(Icons.shuffle),
+                                  iconSize: 20,
+                                ),
+                                IconButton(
+                                  onPressed: _goToNext,
+                                  icon: const Icon(Icons.chevron_right),
+                                  iconSize: 20,
+                                ),
+                              ],
+                            ),
+
+                          // 키보드 안내 (작은 화면에서는 숨김)
+                          if (!isSmallScreen) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              tr('controls.keyboard_guide', namespace: 'word_card'),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ),
       ),
