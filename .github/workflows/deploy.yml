@@ -2,7 +2,7 @@ name: Deploy Flutter Web to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/*, dev ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -57,4 +57,5 @@ jobs:
     
     - name: Deploy to GitHub Pages
       id: deployment
+      if: github.ref == 'refs/heads/main'
       uses: actions/deploy-pages@v4

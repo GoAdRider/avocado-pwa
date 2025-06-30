@@ -1226,52 +1226,137 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: SingleChildScrollView(
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 설명
-            if (description != null && description.isNotEmpty) ...[
-              Text(
-                tr('content.description_label', namespace: 'word_card'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[700],
+            // 둘 다 있을 때: 가로 2열 레이아웃
+            if ((description != null && description.isNotEmpty) && 
+                (example != null && example.isNotEmpty)) ...[
+              // 설명 섹션 (왼쪽)
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      tr('content.description_label', namespace: 'word_card'),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
                     ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // 예시
-            if (example != null && example.isNotEmpty) ...[
-              Text(
-                tr('content.example_label', namespace: 'word_card'),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[700],
+                    const SizedBox(height: 8),
+                    Text(
+                      description!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
                     ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
+              
+              // 구분선 (중간)
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-                ),
-                child: Text(
-                  '"$example"',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontStyle: FontStyle.italic,
-                        color: Colors.blue[800],
+                width: 1,
+                height: 60,
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                color: Colors.grey.withValues(alpha: 0.3),
+              ),
+              
+              // 예시 섹션 (오른쪽)
+              Expanded(
+                flex: 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      tr('content.example_label', namespace: 'word_card'),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[700],
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                       ),
+                      child: Text(
+                        '"$example"',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue[800],
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
+            
+            // 설명만 있을 때
+            if ((description != null && description.isNotEmpty) && 
+                (example == null || example.isEmpty))
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      tr('content.description_label', namespace: 'word_card'),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      description!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            
+            // 예문만 있을 때
+            if ((description == null || description.isEmpty) && 
+                (example != null && example.isNotEmpty))
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      tr('content.example_label', namespace: 'word_card'),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[700],
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        '"$example"',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.blue[800],
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

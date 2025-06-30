@@ -151,7 +151,7 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
 
   bool _isKeyInUse(String key) {
     // 시스템 단축키는 사용 불가
-    const systemKeys = ['F1', 'F12', 'Escape'];
+    const systemKeys = ['F12', 'Escape'];
     if (systemKeys.contains(key)) return true;
 
     // 다른 단축키와 중복 확인
@@ -321,11 +321,11 @@ class _ShortcutDialogState extends State<ShortcutDialog> {
           ),
           const SizedBox(height: 12),
           _buildShortcutItem(
-              tr('toggle_edit_key', namespace: 'dialogs/shortcuts'), tr('toggle_edit_desc', namespace: 'dialogs/shortcuts'), false),
+              'F1', tr('toggle_edit_desc', namespace: 'dialogs/shortcuts'), false),
           _buildShortcutItem(
-              tr('study_end_key', namespace: 'dialogs/shortcuts'), tr('study_end_desc', namespace: 'dialogs/shortcuts'), false),
+              'F2', tr('settings_shortcut_desc', namespace: 'dialogs/shortcuts'), false),
           _buildShortcutItem(
-              tr('escape_key', namespace: 'dialogs/shortcuts'), tr('escape_desc', namespace: 'dialogs/shortcuts'), false),
+              'ESC', tr('escape_desc', namespace: 'dialogs/shortcuts'), false),
         ],
       ),
     );
