@@ -1188,69 +1188,112 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       mainFontSize = mainFontSize * 0.8;
     }
     
-    // 펼친 상태에서는 폰트 크기 축소
-    if (_session.showDetails) {
-      mainFontSize = mainFontSize * 0.6; // 60%로 축소
+    // 작은 화면 여부 판단
+    final isSmallScreen = screenHeight < 600;
+    
+    if (isSmallScreen && _session.showDetails) {
+      // 작은 화면 + 펼친 상태: 펼치기 내용만 전체 화면
+      return Expanded(
+        child: _buildDetailsContent(word),
+      );
     }
     
     return Expanded(
       child: Column(
         children: [
-          // 메인 단어 영역 (펼친 상태에서는 압축됨)
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              vertical: _session.showDetails ? 8 : 16,
-              horizontal: 16,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 메인 단어
-                Text(
-                  _getCurrentMainWord(word),
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: mainFontSize,
-                      ),
-                  textAlign: TextAlign.center,
-                  maxLines: _session.showDetails ? 1 : 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          // 메인 단어 영역
+          if (!_session.showDetails)
+            // 기본 상태: 중앙 정렬
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 메인 단어
+                    Text(
+                      _getCurrentMainWord(word),
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: mainFontSize,
+                          ),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
 
-                // 발음 (앞면에만 표시)
-                if (_session.currentSide == CardSide.front &&
-                    word.targetPronunciation != null) ...[
-                  SizedBox(height: _session.showDetails ? 4 : 8),
+                    // 발음 (앞면에만 표시)
+                    if (_session.currentSide == CardSide.front &&
+                        word.targetPronunciation != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        '[${word.targetPronunciation}]',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                              fontSize: mainFontSize * 0.5,
+                            ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          
+          if (_session.showDetails) ...[
+            // 펼친 상태: 메인 단어 위로 이동
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                children: [
+                  // 메인 단어
                   Text(
-                    '[${word.targetPronunciation}]',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                          fontSize: mainFontSize * 0.5,
+                    _getCurrentMainWord(word),
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: mainFontSize,
                         ),
                     textAlign: TextAlign.center,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ],
-              ],
-            ),
-          ),
 
-          // 구분선 (펼친 상태에서만 표시)
-          if (_session.showDetails) 
+                  // 발음 (앞면에만 표시)
+                  if (_session.currentSide == CardSide.front &&
+                      word.targetPronunciation != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '[${word.targetPronunciation}]',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Colors.grey[600],
+                            fontStyle: FontStyle.italic,
+                            fontSize: mainFontSize * 0.5,
+                          ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            
+            // 구분선
             Container(
               height: 1,
               margin: const EdgeInsets.symmetric(horizontal: 16),
               color: Colors.grey.withValues(alpha: 0.3),
             ),
-
-          // 상세 정보 (펼쳐진 상태일 때)
-          if (_session.showDetails)
+            
+            // 상세 정보 내용
             Expanded(
               child: _buildDetailsContent(word),
             ),
+          ],
         ],
       ),
     );
