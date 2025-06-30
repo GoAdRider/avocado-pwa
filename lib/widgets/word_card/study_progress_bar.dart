@@ -212,7 +212,7 @@ class StudyProgressBar extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                           subtitle: Text(
-                            '• ${vocabularyFile}',
+                            '• $vocabularyFile',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                           trailing: onDeleteVocabulary != null

@@ -48,7 +48,8 @@ class AppHeader extends StatelessWidget {
 
                 // StudyScreen에서 홈으로 갈 때는 StudyScreenController.exitStudy() 사용 (ESC와 동일한 처리)
                 if (Navigator.canPop(context) && currentRouteName == '/study') {
-                  debugPrint('🏠 StudyScreen에서 홈버튼 클릭 - StudyScreenController.exitStudy() 호출');
+                  debugPrint(
+                      '🏠 StudyScreen에서 홈버튼 클릭 - StudyScreenController.exitStudy() 호출');
                   StudyScreenController.exitStudy();
                 } else if (currentRouteName != '/' &&
                     currentRouteName != '/home') {
@@ -73,12 +74,16 @@ class AppHeader extends StatelessWidget {
                     context, '/', (route) => false);
               }
             },
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('🥑', style: TextStyle(fontSize: 24)),
-                SizedBox(width: 8),
-                Text(
+                Image.asset(
+                  'assets/images/avocado-logo.png',
+                  width: 42,
+                  height: 42,
+                ),
+                const SizedBox(width: 0),
+                const Text(
                   'aVocaDo',
                   style: TextStyle(
                     fontSize: 20,
@@ -105,10 +110,18 @@ class AppHeader extends StatelessWidget {
                 border: Border.all(color: const Color(0xFF6B8E23)),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(
-                isKoreanToEnglish ? '🌐KR' : '🌐EN',
-                style:
-                    const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.language,
+                      size: 16, color: Color(0xFF6B8E23)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isKoreanToEnglish ? 'KR' : 'EN',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
           ),
@@ -147,7 +160,8 @@ class DailyStudyTimeWidget extends StatefulWidget {
 }
 
 class _DailyStudyTimeWidgetState extends State<DailyStudyTimeWidget> {
-  final DailyStudyTimeService _dailyTimeService = DailyStudyTimeService.instance;
+  final DailyStudyTimeService _dailyTimeService =
+      DailyStudyTimeService.instance;
   Duration _currentTime = Duration.zero;
 
   @override
@@ -167,7 +181,7 @@ class _DailyStudyTimeWidgetState extends State<DailyStudyTimeWidget> {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     final seconds = duration.inSeconds % 60;
-    
+
     return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 

@@ -610,7 +610,6 @@ class RecentStudyService {
     try {
       int totalCount = 0;
       final now = DateTime.now();
-      final tempDeleteService = TemporaryDeleteService.instance;
       
       // 해당 학습 기록의 세션 키 생성
       final sessionKey = TemporaryDeleteService.createSessionKey(

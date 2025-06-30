@@ -250,13 +250,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   // 제목 섹션
   Widget _buildTitle() {
     return Center(
-      child: Text(
-        tr('main.title'),
-        style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF6B8E23),
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.star, color: Color(0xFFFFD700), size: 28),
+          const SizedBox(width: 12),
+          Text(
+            tr('main.title'),
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF6B8E23),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Icon(Icons.star, color: Color(0xFFFFD700), size: 28),
+        ],
       ),
     );
   }
@@ -623,9 +632,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         const SizedBox(width: 4),
                         InkWell(
                           onTap: () => onFilterTap(filter),
-                          child: const Text(
-                            '❌',
-                            style: TextStyle(fontSize: 10, color: Colors.white),
+                          child: const Icon(
+                            Icons.close,
+                            size: 10,
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -652,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             InkWell(
               onTap: () => _showStudyModeHelp(),
-              child: const Text(' ❓', style: TextStyle(fontSize: 16)),
+              child: const Icon(Icons.help, size: 20, color: Colors.grey),
             ),
           ],
         ),

@@ -12,7 +12,6 @@ import '../services/common/temporary_delete_service.dart';
 import '../services/common/study_progress_service.dart';
 import '../services/common/daily_study_time_service.dart';
 import '../services/home/study_status/study_status_service.dart';
-import '../models/study_progress.dart';
 import '../widgets/home/recent_study_section.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
@@ -1340,7 +1339,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            description!,
+                            description,
                             style: Theme.of(context).textTheme.bodyMedium,
                             textAlign: TextAlign.center,
                           ),
@@ -1402,7 +1401,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      description!,
+                      description,
                       style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
@@ -1452,7 +1451,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    description!,
+                    description,
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),

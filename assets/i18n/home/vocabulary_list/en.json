@@ -16,8 +16,21 @@
     "reset_button": "Reset"
   },
   "guide": {
-    "vocab_info": "📝 Total Words ⭐ Favorites ❌ Wrong Words 🔢 Wrong Count 📅 Added Date",
-    "add_new_vocab": "Add New\nVocabulary"
+    "vocab_info": "Shows total words, favorites, wrong words, and wrong counts",
+    "add_new_vocab": "Add New\nVocabulary",
+    "total_words": "Total Words",
+    "favorites": "Favorites",
+    "wrong_words": "Wrong Words", 
+    "wrong_count": "Wrong Count"
+  },
+  "labels": {
+    "words": "Words",
+    "favorites": "Favorites",
+    "wrong_words": "Wrong Words",
+    "wrong_count": "Wrong Count"
+  },
+  "stats": {
+    "calculating": "Calculating..."
   },
   "dialog": {
     "help_title": "Vocabulary List Help",

@@ -15,30 +15,68 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
   // 복습 데이터 맵
   Map<String, Map<String, String>> get _reviewData => {
         'urgent': {
-          'emoji': '🔴',
+          'emoji': 'priority_high',
           'title': tr('review_types.urgent_review', namespace: 'home/forgetting_curve'),
           'count': '7${tr('units.words')}',
           'description': tr('descriptions.urgent_review', namespace: 'home/forgetting_curve'),
         },
         'recommended': {
-          'emoji': '🟡',
+          'emoji': 'lightbulb',
           'title': tr('review_types.recommended_review', namespace: 'home/forgetting_curve'),
           'count': '12${tr('units.words')}',
           'description': tr('descriptions.recommended_review', namespace: 'home/forgetting_curve'),
         },
         'preview': {
-          'emoji': '🟢',
+          'emoji': 'preview',
           'title': tr('review_types.preview_review', namespace: 'home/forgetting_curve'),
           'count': '5${tr('units.words')}',
           'description': tr('descriptions.preview_review', namespace: 'home/forgetting_curve'),
         },
         'forgotten': {
-          'emoji': '⚠️',
+          'emoji': 'warning',
           'title': tr('review_types.forgotten_review', namespace: 'home/forgetting_curve'),
           'count': '7${tr('units.words')}',
           'description': tr('descriptions.forgotten_review', namespace: 'home/forgetting_curve'),
         },
       };
+
+  // 아이콘 헬퍼 메서드
+  Widget _getReviewIcon(String iconName, double size, Color color) {
+    IconData iconData;
+    switch (iconName) {
+      case 'priority_high':
+        iconData = Icons.priority_high;
+        break;
+      case 'lightbulb':
+        iconData = Icons.lightbulb;
+        break;
+      case 'preview':
+        iconData = Icons.preview;
+        break;
+      case 'warning':
+        iconData = Icons.warning;
+        break;
+      default:
+        iconData = Icons.help;
+    }
+    return Icon(iconData, size: size, color: color);
+  }
+
+  // 아이콘 색상 헬퍼 메서드
+  Color _getIconColor(String reviewType) {
+    switch (reviewType) {
+      case 'urgent':
+        return Colors.red;
+      case 'recommended':
+        return Colors.amber;
+      case 'preview':
+        return Colors.green;
+      case 'forgotten':
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,9 +194,10 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
-                      child: Text(
-                        data['emoji']!,
-                        style: const TextStyle(fontSize: 28),
+                      child: _getReviewIcon(
+                        data['emoji']!, 
+                        28, 
+                        _getIconColor(reviewType),
                       ),
                     ),
                   ),
@@ -283,9 +322,10 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
-                    child: Text(
-                      data['emoji']!,
-                      style: const TextStyle(fontSize: 16),
+                    child: _getReviewIcon(
+                      data['emoji']!, 
+                      16, 
+                      _getIconColor(reviewType),
                     ),
                   ),
                 ),
@@ -401,7 +441,14 @@ class _SmartReviewSectionState extends State<SmartReviewSection> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('🚧 ${tr('status.coming_soon')}'),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.construction, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              Text(tr('status.coming_soon')),
+            ],
+          ),
           content: Text(message),
           actions: [
             TextButton(

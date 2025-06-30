@@ -16,8 +16,21 @@
     "reset_button": "초기화"
   },
   "guide": {
-    "vocab_info": "📝 총 단어수 ⭐ 즐겨찾기 ❌ 틀린단어 🔢 틀린횟수 📅 추가날짜",
-    "add_new_vocab": "새로운\n어휘집 추가하기"
+    "vocab_info": "총 단어수, 즐겨찾기, 틀린단어, 틀린횟수를 표시합니다",
+    "add_new_vocab": "새로운\n어휘집 추가하기",
+    "total_words": "총 단어수",
+    "favorites": "즐겨찾기", 
+    "wrong_words": "틀린단어",
+    "wrong_count": "틀린횟수"
+  },
+  "labels": {
+    "words": "단어",
+    "favorites": "즐겨찾기",
+    "wrong_words": "틀린단어", 
+    "wrong_count": "틀린횟수"
+  },
+  "stats": {
+    "calculating": "계산 중..."
   },
   "dialog": {
     "help_title": "어휘집 목록 도움말",

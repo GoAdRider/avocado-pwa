@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../../common/vocabulary_service.dart';
 import '../../common/hive_service.dart';
-import '../../common/daily_study_time_service.dart';
 
 /// 학습 현황 통계를 담는 데이터 클래스
 class StudyStatusStats {
@@ -48,7 +47,6 @@ class StudyStatusService {
 
   final VocabularyService _vocabularyService = VocabularyService.instance;
   final HiveService _hiveService = HiveService.instance;
-  final DailyStudyTimeService _dailyTimeService = DailyStudyTimeService.instance;
 
   // 상태 변경 알림을 위한 StreamController
   final StreamController<StudyStatusStats> _statsController =

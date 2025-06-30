@@ -228,7 +228,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
         ),
         InkWell(
           onTap: _showHelpDialog,
-          child: const Text(' ❓', style: TextStyle(fontSize: 16)),
+          child: const Icon(Icons.help, size: 20, color: Colors.grey),
         ),
       ],
     );
@@ -538,7 +538,7 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
               ),
               const SizedBox(width: 6),
               Text(
-                '계산 중...',
+                _getTextWithFallback('stats.calculating', '계산 중...', 'Calculating...'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -547,56 +547,103 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
               ),
             ],
           )
-        : Text(
-            '📝${stats.totalWords} ⭐${stats.favoriteWords} ❌${stats.wrongWords} 🔢${stats.wrongCount}',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.article, size: 13, color: AppColors.primary),
+              Text('${stats.totalWords}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              const SizedBox(width: 8),
+              const Icon(Icons.star, size: 13, color: Colors.amber),
+              Text('${stats.favoriteWords}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              const SizedBox(width: 8),
+              const Icon(Icons.close, size: 13, color: Colors.red),
+              Text('${stats.wrongWords}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+              const SizedBox(width: 8),
+              const Icon(Icons.numbers, size: 13, color: Colors.orange),
+              Text('${stats.wrongCount}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+            ],
           ),
     );
   }
 
   /// 어휘집 정보 가이드 (모던 디자인)
   Widget _buildVocabularyInfoGuide() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: AppColors.accent,
-        boxShadow: AppShadows.card,
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.2),
-            ),
-            child: const Icon(
-              Icons.info_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
+    return ListenableBuilder(
+      listenable: LanguageNotifier.instance,
+      builder: (context, _) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: AppColors.accent,
+            boxShadow: AppShadows.card,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              tr('guide.vocab_info', namespace: 'home/vocabulary_list'),
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                height: 1.4,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.2),
+                ),
+                child: const Icon(
+                  Icons.info_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
-              textAlign: TextAlign.left,
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildGuideItem(Icons.article, Colors.white, 'guide.total_words', '총 단어수', 'Total Words'),
+                    _buildGuideItem(Icons.star, Colors.amber, 'guide.favorites', '즐겨찾기', 'Favorites'),
+                    _buildGuideItem(Icons.close, Colors.red, 'guide.wrong_words', '틀린단어', 'Wrong Words'),
+                    _buildGuideItem(Icons.numbers, Colors.orange, 'guide.wrong_count', '틀린횟수', 'Wrong Count'),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+
+  /// 번역 fallback 헬퍼 메서드
+  String _getTextWithFallback(String translationKey, String fallbackKr, String fallbackEn) {
+    String text = tr(translationKey, namespace: 'home/vocabulary_list');
+    if (text == translationKey || text.contains('home/vocabulary_list:')) {
+      // 번역 실패 시 언어에 따라 fallback 사용
+      text = LanguageNotifier.instance.isKorean ? fallbackKr : fallbackEn;
+    }
+    return text;
+  }
+
+  /// 가이드 아이템 (아이콘 + 텍스트)
+  Widget _buildGuideItem(IconData icon, Color iconColor, String translationKey, String fallbackKr, String fallbackEn) {
+    String text = _getTextWithFallback(translationKey, fallbackKr, fallbackEn);
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 22,
+          color: iconColor,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 15,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
@@ -721,9 +768,9 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
           height: 20,
           child: Row(
             children: [
-              Expanded(child: _buildStatCell('📝', '${vocabulary.totalWords}', '단어')),
+              Expanded(child: _buildStatCell(Icons.article, AppColors.primary, '${vocabulary.totalWords}', _getTextWithFallback('labels.words', '단어', 'Words'))),
               const SizedBox(width: 4),
-              Expanded(child: _buildStatCell('⭐', '${vocabulary.favoriteWords}', '즐겨찾기')),
+              Expanded(child: _buildStatCell(Icons.star, Colors.amber, '${vocabulary.favoriteWords}', _getTextWithFallback('labels.favorites', '즐겨찾기', 'Favorites'))),
             ],
           ),
         ),
@@ -733,9 +780,9 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
           height: 20,
           child: Row(
             children: [
-              Expanded(child: _buildStatCell('❌', '${vocabulary.wrongWords}', '틀린단어')),
+              Expanded(child: _buildStatCell(Icons.close, Colors.red, '${vocabulary.wrongWords}', _getTextWithFallback('labels.wrong_words', '틀린단어', 'Wrong Words'))),
               const SizedBox(width: 4),
-              Expanded(child: _buildStatCell('🔢', '${vocabulary.wrongCount}', '틀린횟수')),
+              Expanded(child: _buildStatCell(Icons.numbers, Colors.orange, '${vocabulary.wrongCount}', _getTextWithFallback('labels.wrong_count', '틀린횟수', 'Wrong Count'))),
             ],
           ),
         ),
@@ -744,15 +791,16 @@ class _VocabularyListSectionState extends State<VocabularyListSection> {
   }
 
   /// 그리드용 통계 셀 (텍스트 라벨 제거, 중앙 정렬)
-  Widget _buildStatCell(String icon, String value, String label) {
+  Widget _buildStatCell(IconData iconData, Color iconColor, String value, String label) {
     return SizedBox(
       height: 20,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(
-            icon,
-            style: const TextStyle(fontSize: 11),
+          Icon(
+            iconData,
+            size: 11,
+            color: iconColor,
           ),
           const SizedBox(width: 2),
           Text(
