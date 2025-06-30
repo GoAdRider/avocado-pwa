@@ -35,11 +35,11 @@ jobs:
         channel: 'stable'
         cache: true
     
-    - name: Get dependencies
-      run: flutter pub get
-    
     - name: Clean Flutter
       run: flutter clean
+    
+    - name: Get dependencies
+      run: flutter pub get
     
     - name: Run build_runner
       run: flutter packages pub run build_runner build --delete-conflicting-outputs
