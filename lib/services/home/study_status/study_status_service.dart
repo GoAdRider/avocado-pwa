@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../../common/vocabulary_service.dart';
 import '../../common/hive_service.dart';
+import '../../common/daily_study_time_service.dart';
 
 /// 학습 현황 통계를 담는 데이터 클래스
 class StudyStatusStats {
@@ -47,6 +48,7 @@ class StudyStatusService {
 
   final VocabularyService _vocabularyService = VocabularyService.instance;
   final HiveService _hiveService = HiveService.instance;
+  final DailyStudyTimeService _dailyTimeService = DailyStudyTimeService.instance;
 
   // 상태 변경 알림을 위한 StreamController
   final StreamController<StudyStatusStats> _statsController =
@@ -97,28 +99,26 @@ class StudyStatusService {
     }
   }
 
-  /// 연속 학습일 계산
+  /// 연속 학습일 계산 (당일 누적 시간 기반)
   Future<int> _calculateStudyStreak() async {
     try {
-      // HiveService의 데이터를 활용하여 연속 학습일 계산
-      final recentStudyData = _hiveService.getStudyRecords();
-      
-      if (recentStudyData.isEmpty) return 0;
-      
-      // 오늘부터 거꾸로 계산하여 연속된 학습일 찾기
+      final box = _hiveService.generalBox;
       final now = DateTime.now();
       int streak = 0;
       bool foundTodayStudy = false;
       
+      // 오늘부터 거꾸로 계산하여 연속된 학습일 찾기
       for (int i = 0; i < 30; i++) { // 최대 30일까지 확인
         final checkDate = now.subtract(Duration(days: i));
         final dateKey = '${checkDate.year}-${checkDate.month.toString().padLeft(2, '0')}-${checkDate.day.toString().padLeft(2, '0')}';
+        final boxKey = 'daily_study_times:$dateKey';
         
-        bool hasStudyOnDate = recentStudyData.any((record) {
-          final recordDate = record.studyDate;
-          final recordDateKey = '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}-${recordDate.day.toString().padLeft(2, '0')}';
-          return recordDateKey == dateKey;
-        });
+        // 해당 날짜의 학습 시간 조회
+        final studySeconds = box.get(boxKey, defaultValue: 0) as int;
+        final studyDuration = Duration(seconds: studySeconds);
+        
+        // 1분 이상 학습했는지 확인
+        bool hasStudyOnDate = studyDuration.inMinutes >= 1;
         
         if (hasStudyOnDate) {
           streak++;
@@ -129,7 +129,7 @@ class StudyStatusService {
         }
       }
       
-      // 학습을 시작하면 최소 1일부터 시작 (디폴트 1일)
+      // 오늘 학습했지만 streak가 0이면 최소 1일
       if (foundTodayStudy && streak == 0) {
         streak = 1;
       }

@@ -6,6 +6,8 @@ import '../../models/vocabulary_word.dart';
 import '../../screens/study_screen.dart';
 import '../../services/home/filter/filter_service.dart';
 import '../../services/common/temporary_delete_service.dart';
+import '../../services/common/study_progress_service.dart';
+import '../../models/study_progress.dart';
 
 class RecentStudySection extends StatefulWidget {
   final Function? onStudyCompleted; // 학습 완료 시 콜백
@@ -166,6 +168,8 @@ class RecentStudySectionState extends State<RecentStudySection> {
         typeFilters: typeFilters ?? [],
       );
       
+      debugPrint('🔑 생성된 세션 키: $sessionKey');
+      
       final tempDeleteService = TemporaryDeleteService.instance;
       final filteredWords = words.where((word) => 
         !tempDeleteService.isTemporarilyDeletedInSession(word.id, sessionKey)
@@ -181,33 +185,199 @@ class RecentStudySectionState extends State<RecentStudySection> {
 
       debugPrint('📚 학습 재개: ${info.vocabularyFile} (${studyMode.toString()})');
 
-      // 학습 화면으로 이동
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          settings: const RouteSettings(name: '/study'),
-          builder: (context) => StudyScreen(
-            key: StudyScreenController.key,
-            mode: studyMode,
-            words: words,
-            vocabularyFiles: vocabularyFiles,
-            studyModePreference: targetMode,
-            posFilters: posFilters ?? [],
-            typeFilters: typeFilters ?? [],
-          ),
-        ),
+      // 진행률 확인을 위한 세션 키 생성 (StudyProgressService용)
+      final progressSessionKey = StudyProgressService.createSessionKey(
+        vocabularyFiles: vocabularyFiles,
+        studyMode: _getStudyModeString(studyMode),
+        targetMode: targetMode,
+        posFilters: posFilters ?? [],
+        typeFilters: typeFilters ?? [],
       );
+      
+      debugPrint('🔑 진행률 세션 키: $progressSessionKey');
+      
+      final progressService = StudyProgressService.instance;
+      final existingProgress = progressService.getProgress(progressSessionKey);
+      
+      debugPrint('🔍 진행률 확인: $existingProgress');
+      if (existingProgress != null) {
+        debugPrint('🔍 isAtStart: ${existingProgress.isAtStart}, isAtLastCard: ${existingProgress.isAtLastCard}');
+        debugPrint('🔍 currentIndex: ${existingProgress.currentIndex}, totalWords: ${existingProgress.totalWords}');
+      }
+      
+      // 이전 진행률이 있고 첫 번째도 마지막도 아닌 중간 카드에서 나온 경우만 다이얼로그 표시
+      bool shouldShowDialog = existingProgress != null && !existingProgress.isAtStart && !existingProgress.isAtLastCard;
+      debugPrint('🔎 다이얼로그 표시 여부: $shouldShowDialog');
+      debugPrint('🔎 조건 세부: existingProgress != null: ${existingProgress != null}');
+      if (existingProgress != null) {
+        debugPrint('🔎 조건 세부: !isAtStart: ${!existingProgress.isAtStart}');
+        debugPrint('🔎 조건 세부: !isAtLastCard: ${!existingProgress.isAtLastCard}');
+      }
+      
+      if (shouldShowDialog) {
+        debugPrint('🎯🎯🎯 다이얼로그 표시 조건 만족 - 다이얼로그 표시 🎯🎯🎯');
+        _showContinueStudyDialog(existingProgress, words, progressSessionKey, studyMode, vocabularyFiles, targetMode, posFilters, typeFilters);
+        return; // 다이얼로그 표시 후 여기서 종료
+      } else {
+        debugPrint('❌❌❌ 다이얼로그 표시 조건 불만족 - 바로 학습 시작 ❌❌❌');
+        // 진행률이 없거나 첫 번째/마지막 카드면 바로 학습 시작
+        if (existingProgress != null && existingProgress.isAtLastCard) {
+          debugPrint('🔄 마지막 카드에서 나온 상태 - 진행률 삭제');
+          // 마지막 카드에서 나온 상태면 진행률 삭제하고 처음부터 시작
+          progressService.clearProgress(progressSessionKey);
+        }
+        
+        await _startStudy(studyMode, words, vocabularyFiles, targetMode, posFilters, typeFilters);
+        
+        // 학습 완료 후 돌아왔을 때 데이터 새로고침
+        debugPrint('🏠 학습에서 돌아옴 - 최근학습기록 새로고침');
+        _loadRecentStudyRecords();
 
-      // 학습 완료 후 돌아왔을 때 데이터 새로고침
-      debugPrint('🏠 학습에서 돌아옴 - 최근학습기록 새로고침');
-      _loadRecentStudyRecords();
-
-      // 부모에게 알림
-      if (widget.onStudyCompleted != null) {
-        widget.onStudyCompleted!();
+        // 부모에게 알림
+        if (widget.onStudyCompleted != null) {
+          widget.onStudyCompleted!();
+        }
       }
     } catch (e) {
       debugPrint('학습 재개 실패: $e');
       _showErrorDialog('학습 재개 실패', '해당 어휘집을 불러올 수 없습니다.\n오류: $e');
+    }
+  }
+
+  // 학습 시작 공통 함수
+  Future<void> _startStudy(StudyMode studyMode, List<VocabularyWord> words, List<String> vocabularyFiles, String targetMode, List<String>? posFilters, List<String>? typeFilters) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/study'),
+        builder: (context) => StudyScreen(
+          key: StudyScreenController.key,
+          mode: studyMode,
+          words: words,
+          vocabularyFiles: vocabularyFiles,
+          studyModePreference: targetMode,
+          posFilters: posFilters ?? [],
+          typeFilters: typeFilters ?? [],
+        ),
+      ),
+    );
+  }
+
+  // 홈 화면에서 이어하기 다이얼로그 표시
+  void _showContinueStudyDialog(StudyProgress progress, List<VocabularyWord> words, String progressSessionKey, StudyMode studyMode, List<String> vocabularyFiles, String targetMode, List<String>? posFilters, List<String>? typeFilters) {
+    debugPrint('🚨🚨🚨 _showContinueStudyDialog 함수 호출됨!!! 🚨🚨🚨');
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.play_circle_outline, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(tr('continue_study.title', namespace: 'word_card')),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(tr('continue_study.message', namespace: 'word_card')),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '📊 ${tr('continue_study.progress', namespace: 'word_card')}: ${progress.progressText}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text('📅 ${tr('continue_study.last_study', namespace: 'word_card')}: ${_formatProgressDate(progress.lastStudyTime)}'),
+                    if (progress.isShuffled)
+                      Text('🔀 ${tr('continue_study.shuffled', namespace: 'word_card')}'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // 취소 - 아무것도 하지 않음
+              },
+              child: Text(tr('continue_study.cancel', namespace: 'word_card')),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                // 처음부터 시작 (진행률 삭제)
+                StudyProgressService.instance.clearProgress(progressSessionKey);
+                await _startStudy(studyMode, words, vocabularyFiles, targetMode, posFilters, typeFilters);
+                
+                // 학습 완료 후 새로고침
+                _loadRecentStudyRecords();
+                if (widget.onStudyCompleted != null) {
+                  widget.onStudyCompleted!();
+                }
+              },
+              child: Text(tr('continue_study.start_over', namespace: 'word_card')),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                // 이어하기 (진행률 복원)
+                final progressService = StudyProgressService.instance;
+                final orderedWords = progressService.restoreWordOrder(words, progress);
+                
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    settings: const RouteSettings(name: '/study'),
+                    builder: (context) => StudyScreen(
+                      key: StudyScreenController.key,
+                      mode: studyMode,
+                      words: orderedWords,
+                      vocabularyFiles: vocabularyFiles,
+                      studyModePreference: targetMode,
+                      posFilters: posFilters ?? [],
+                      typeFilters: typeFilters ?? [],
+                    ),
+                  ),
+                );
+                
+                // 학습 완료 후 새로고침
+                _loadRecentStudyRecords();
+                if (widget.onStudyCompleted != null) {
+                  widget.onStudyCompleted!();
+                }
+              },
+              child: Text(tr('continue_study.continue', namespace: 'word_card')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 진행률 날짜 포맷팅
+  String _formatProgressDate(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}일 전';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}시간 전';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}분 전';
+    } else {
+      return '방금 전';
     }
   }
 

@@ -4,6 +4,7 @@ import '../../../models/vocabulary_word.dart';
 import '../../../utils/i18n/simple_i18n.dart';
 import '../../common/hive_service.dart';
 import '../../common/temporary_delete_service.dart';
+import '../../common/study_progress_service.dart';
 import '../filter/filter_service.dart';
 
 /// 최근 학습 기록 정보 클래스 (카드 학습만 포함)
@@ -416,14 +417,33 @@ class RecentStudyService {
     final targetModeText = _getTargetModeDisplayText(info.targetMode);
     buffer.writeln('${tr('tooltip.display_order', namespace: 'home/recent_study')}: $targetModeText');
 
-    // 5. 진행도 (학습한 단어 / 필터링된 전체 단어)
-    final studiedWordsCount = info.totalWords;
-    if (filteredWordCount == 0) {
-      buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: 0/0 (0${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
+    // 5. 진행률 정보 (이어하기 진행률 또는 완료 상태)
+    final studyProgressService = StudyProgressService.instance;
+    final sessionKey = StudyProgressService.createSessionKey(
+      vocabularyFiles: vocabularyFiles,
+      studyMode: info.studyMode,
+      targetMode: info.targetMode,
+      posFilters: info.posFilters.map((filter) => filter.split('(')[0].trim()).toList(),
+      typeFilters: info.typeFilters.map((filter) => filter.split('(')[0].trim()).toList(),
+    );
+    
+    final progress = studyProgressService.getProgress(sessionKey);
+    if (progress != null && !progress.isCompleted) {
+      // 진행 중인 학습이 있는 경우
+      buffer.writeln('${tr('tooltip.study_progress', namespace: 'home/recent_study')}: ${progress.progressText} (${progress.progressPercent}${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
+      if (progress.isShuffled) {
+        buffer.writeln('🔀 ${tr('tooltip.shuffled_state', namespace: 'home/recent_study')}');
+      }
     } else {
-      final progressPercent = ((studiedWordsCount / filteredWordCount) * 100).round();
-      final actualProgressPercent = progressPercent > 100 ? 100 : progressPercent;
-      buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: $studiedWordsCount/$filteredWordCount ($actualProgressPercent${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
+      // 일반적인 진행도 (학습한 단어 / 필터링된 전체 단어)
+      final studiedWordsCount = info.totalWords;
+      if (filteredWordCount == 0) {
+        buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: 0/0 (0${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
+      } else {
+        final progressPercent = ((studiedWordsCount / filteredWordCount) * 100).round();
+        final actualProgressPercent = progressPercent > 100 ? 100 : progressPercent;
+        buffer.writeln('${tr('tooltip.progress', namespace: 'home/recent_study')}: $studiedWordsCount/$filteredWordCount ($actualProgressPercent${tr('tooltip.unit_percent', namespace: 'home/recent_study')})');
+      }
     }
 
     // 6. 필터 정보 (해당 학습 기록의 실제 필터 사용)

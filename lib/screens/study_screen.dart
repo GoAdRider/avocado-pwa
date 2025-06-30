@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/common/app_layout.dart';
@@ -8,6 +9,10 @@ import '../services/word_card/study_service.dart';
 import '../services/home/vocabulary_list/vocabulary_list_service.dart';
 import '../services/common/vocabulary_service.dart';
 import '../services/common/temporary_delete_service.dart';
+import '../services/common/study_progress_service.dart';
+import '../services/common/daily_study_time_service.dart';
+import '../services/home/study_status/study_status_service.dart';
+import '../models/study_progress.dart';
 import '../widgets/home/recent_study_section.dart';
 // 위젯들을 직접 구현하므로 import 제거
 
@@ -50,10 +55,23 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   late FocusNode _focusNode;
   final VocabularyService _vocabularyService = VocabularyService.instance;
   final TemporaryDeleteService _tempDeleteService = TemporaryDeleteService.instance;
+  final StudyProgressService _progressService = StudyProgressService.instance;
+  final DailyStudyTimeService _dailyTimeService = DailyStudyTimeService.instance;
+  final StudyStatusService _studyStatusService = StudyStatusService.instance;
 
   // 학습 세션 추적을 위한 변수들
   String? _sessionId;
   DateTime? _sessionStartTime;
+  
+  // 학습 시간 표시용 변수들
+  Duration _totalStudyTime = Duration.zero; // 실제 누적된 학습 시간
+  late Timer _studyTimer;
+  
+  // 단어별 시간 제한용 변수들
+  late DateTime _currentCardStartTime;
+  Duration _currentCardTime = Duration.zero; // 현재 카드에서 소요된 시간
+  bool _isMainTimerActive = true; // 전체 타이머 활성화 상태
+  bool _isShuffled = false; // 섞기 상태 추적
 
   bool _isExiting = false; // 중복 종료 방지 플래그
 
@@ -65,6 +83,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     _initializeSession();
     _startSessionTracking();
     _startTemporaryDeleteSession();
+    _startStudyTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _focusNode.requestFocus();
     });
@@ -73,11 +92,15 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _studyTimer.cancel(); // 타이머 정리
     // dispose에서는 async를 사용할 수 없으므로 즉시 실행
-    _endSessionTracking().then((_) {
+    _saveCurrentProgress().then((_) {
+      debugPrint('🧹 dispose에서 진행률 저장 완료');
+      return _endSessionTracking();
+    }).then((_) {
       debugPrint('🧹 dispose에서 세션 데이터 저장 완료');
     }).catchError((e) {
-      debugPrint('❌ dispose에서 세션 저장 실패: $e');
+      debugPrint('❌ dispose에서 저장 실패: $e');
     });
     _tempDeleteService.endSession(); // 임시 삭제 세션 종료
     _focusNode.dispose();
@@ -170,6 +193,17 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   }
 
   void _initializeSession() {
+    // 기존 진행률 확인
+    final sessionKey = StudyProgressService.createSessionKey(
+      vocabularyFiles: widget.vocabularyFiles,
+      studyMode: _getStudyModeString(widget.mode),
+      targetMode: widget.studyModePreference,
+      posFilters: widget.posFilters,
+      typeFilters: widget.typeFilters,
+    );
+    
+    final existingProgress = _progressService.getProgress(sessionKey);
+    
     // 위주 학습 설정에 따라 초기 카드 면 결정
     CardSide initialSide = CardSide.front;
 
@@ -194,12 +228,82 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
       return word.copyWith(isFavorite: isFavorite);
     }).toList();
 
-    _session = StudySession(
-      mode: widget.mode,
-      words: wordsWithFavoriteStatus,
-      vocabularyFiles: List.from(widget.vocabularyFiles),
-      currentSide: initialSide,
-    );
+    // 이전 진행률이 있고 첫 번째 카드가 아니면 진행률 복원
+    if (existingProgress != null && !existingProgress.isAtStart) {
+      final orderedWords = _progressService.restoreWordOrder(wordsWithFavoriteStatus, existingProgress);
+      _isShuffled = existingProgress.isShuffled; // 섞기 상태 복원
+      _session = StudySession(
+        mode: widget.mode,
+        words: orderedWords,
+        vocabularyFiles: List.from(widget.vocabularyFiles),
+        currentSide: initialSide,
+        currentIndex: existingProgress.currentIndex,
+      );
+    } else {
+      // 일반적인 새 세션 시작
+      _session = StudySession(
+        mode: widget.mode,
+        words: wordsWithFavoriteStatus,
+        vocabularyFiles: List.from(widget.vocabularyFiles),
+        currentSide: initialSide,
+      );
+    }
+  }
+
+  /// 학습 시간 타이머 시작
+  void _startStudyTimer() {
+    _startCardTimer(); // 첫 번째 카드 타이머도 시작
+    
+    _studyTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      final now = DateTime.now();
+      
+      if (_isMainTimerActive) {
+        _currentCardTime = now.difference(_currentCardStartTime);
+        
+        // 현재 카드에서 정확히 10초 경과 체크
+        if (_currentCardTime.inSeconds >= 10) {
+          _isMainTimerActive = false;
+          _currentCardTime = const Duration(seconds: 10); // 정확히 10초로 제한
+          _totalStudyTime = _totalStudyTime + _currentCardTime;
+          debugPrint('⏱️ 정확히 10초에서 타이머 정지');
+        } else {
+          // 1초마다 UI 업데이트 및 당일 누적 시간 업데이트
+          if (_currentCardTime.inMilliseconds % 1000 < 100) {
+            final currentSessionTime = _totalStudyTime + _currentCardTime;
+            _dailyTimeService.updateCurrentTime(currentSessionTime);
+            setState(() {});
+          }
+        }
+      }
+    });
+    debugPrint('⏱️ 학습 시간 타이머 시작');
+  }
+  
+  /// 현재 카드 타이머 시작 (새 카드로 이동 시)
+  void _startCardTimer() {
+    // 이전 카드에서 사용한 시간을 총 시간에 누적
+    if (!_isMainTimerActive) {
+      // 정지된 상태에서 카드 이동하는 경우 (이미 10초 누적됨)
+      debugPrint('🎯 정지된 상태에서 카드 이동');
+    } else {
+      // 10초 전에 카드 이동하는 경우
+      _totalStudyTime = _totalStudyTime + _currentCardTime;
+      debugPrint('🎯 ${_currentCardTime.inSeconds}초에서 카드 이동');
+    }
+    
+    _currentCardStartTime = DateTime.now();
+    _currentCardTime = Duration.zero;
+    _isMainTimerActive = true; // 새 카드에서는 타이머 재활성화
+    debugPrint('🎯 새 카드 진입 - 타이머 재시작');
+  }
+
+  /// 학습 시간 포맷팅
+  String _formatStudyDuration() {
+    final currentTotal = _totalStudyTime + (_isMainTimerActive ? _currentCardTime : Duration.zero);
+    final minutes = currentTotal.inMinutes;
+    final seconds = currentTotal.inSeconds % 60;
+    final timeText = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    return _isMainTimerActive ? timeText : '$timeText ⏸';
   }
 
   void _updateSession(StudySession newSession) {
@@ -263,6 +367,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         currentSide: prevSide,
         showDetails: false,
       ));
+      _startCardTimer(); // 새 카드로 이동 시 타이머 시작
     }
   }
 
@@ -286,6 +391,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
         currentSide: nextSide,
         showDetails: false,
       ));
+      _startCardTimer(); // 새 카드로 이동 시 타이머 시작
     } else if (_session.currentIndex == _session.words.length - 1) {
       // 마지막 단어에서 다음 버튼을 누르면 완료 처리
       _showCompletionDialog();
@@ -304,6 +410,7 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
   void _shuffleWords() {
     final shuffledWords = List<VocabularyWord>.from(_session.words);
     shuffledWords.shuffle();
+    _isShuffled = true; // 섞기 상태 업데이트
 
     // 위주 학습 설정에 따라 섞기 후 시작면 결정
     CardSide shuffledSide = CardSide.front;
@@ -392,6 +499,19 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     debugPrint('🚪 StudyScreen 종료 시작');
 
     try {
+      // 진행률 저장
+      await _saveCurrentProgress();
+      
+      // 당일 누적 시간에 현재 세션 시간 추가
+      final finalSessionTime = _totalStudyTime + (_isMainTimerActive ? _currentCardTime : Duration.zero);
+      await _dailyTimeService.addStudyTime(finalSessionTime);
+      
+      // 연속학습 통계 업데이트 (1분 이상 학습했을 때만)
+      if (finalSessionTime.inMinutes >= 1) {
+        _studyStatusService.refreshStats();
+        debugPrint('📊 1분 이상 학습으로 연속학습 통계 업데이트');
+      }
+      
       // 세션 추적 종료 (데이터 저장 완료까지 대기)
       await _endSessionTracking();
 
@@ -624,7 +744,56 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
     setState(() {});
   }
 
+  /// 현재 학습 진행률 저장
+  Future<void> _saveCurrentProgress() async {
+    try {
+      final sessionKey = StudyProgressService.createSessionKey(
+        vocabularyFiles: widget.vocabularyFiles,
+        studyMode: _getStudyModeString(widget.mode),
+        targetMode: widget.studyModePreference,
+        posFilters: widget.posFilters,
+        typeFilters: widget.typeFilters,
+      );
+
+      await _progressService.saveProgress(
+        sessionKey: sessionKey,
+        currentIndex: _session.currentIndex,
+        words: _session.words,
+        isShuffled: _isShuffled,
+        studyMode: _getStudyModeString(widget.mode),
+        targetMode: widget.studyModePreference,
+        vocabularyFiles: widget.vocabularyFiles,
+        posFilters: widget.posFilters,
+        typeFilters: widget.typeFilters,
+      );
+    } catch (e) {
+      debugPrint('📊 진행률 저장 실패: $e');
+    }
+  }
+
+  /// 현재 학습 진행률 삭제 (학습 완료 시)
+  Future<void> _clearCurrentProgress() async {
+    try {
+      final sessionKey = StudyProgressService.createSessionKey(
+        vocabularyFiles: widget.vocabularyFiles,
+        studyMode: _getStudyModeString(widget.mode),
+        targetMode: widget.studyModePreference,
+        posFilters: widget.posFilters,
+        typeFilters: widget.typeFilters,
+      );
+
+      await _progressService.clearProgress(sessionKey);
+    } catch (e) {
+      debugPrint('📊 진행률 삭제 실패: $e');
+    }
+  }
+
+  /// 이어하기 다이얼로그 표시
+
   void _showCompletionDialog() async {
+    // 진행률 삭제 (학습 완료)
+    await _clearCurrentProgress();
+    
     // 세션 완료 처리 (데이터 저장 완료까지 대기)
     await _endSessionTracking();
 
@@ -776,6 +945,14 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
             flex: 2,
             child: _buildProgressInfo(),
           ),
+          
+          const SizedBox(width: 16),
+          
+          // 학습 시간 정보
+          Expanded(
+            flex: 1,
+            child: _buildStudyTimeInfo(),
+          ),
         ],
       ),
     );
@@ -799,6 +976,39 @@ class StudyScreenState extends State<StudyScreen> with WidgetsBindingObserver {
             ),
         textAlign: TextAlign.center,
         overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildStudyTimeInfo() {
+    final timerColor = _isMainTimerActive ? Colors.green : Colors.red;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: timerColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: timerColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _isMainTimerActive ? Icons.timer : Icons.timer_off,
+            size: 16,
+            color: timerColor[700],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            _formatStudyDuration(),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: timerColor[800],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

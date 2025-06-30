@@ -9,6 +9,18 @@
     "return_to_home": "홈으로 돌아가기",
     "continue_study": "학습 계속"
   },
+  "continue_study": {
+    "title": "이어하시겠습니까?",
+    "message": "이전에 중단된 학습이 있습니다.",
+    "already_exists_title": "이미 최근 학습 기록에 있습니다",
+    "already_exists_message": "동일한 조건의 학습 기록이 있습니다. 이어하시겠습니까?",
+    "progress": "진행률",
+    "last_study": "마지막 학습",
+    "shuffled": "단어가 섞여진 상태",
+    "cancel": "취소",
+    "start_over": "처음부터",
+    "continue": "이어하기"
+  },
   "modes": {
     "card_study": "카드 학습",
     "favorite_review": "즐겨찾기 복습",

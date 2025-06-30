@@ -7,6 +7,7 @@ import '../../models/study_record.dart';
 import '../../models/daily_stats.dart';
 import '../../models/achievement.dart';
 import '../../models/personal_record.dart';
+import '../../models/study_progress.dart';
 import '../dialogs/daily_goals_service.dart';
 
 class HiveService {
@@ -19,6 +20,8 @@ class HiveService {
   static const String _achievementsBox = 'achievements';
   static const String _personalRecordsBox = 'personal_records';
   static const String _temporaryDeleteBox = 'temporary_delete';
+  static const String _studyProgressBox = 'study_progress';
+  static const String _generalBox = 'general';
 
   static HiveService? _instance;
   static HiveService get instance => _instance ??= HiveService._internal();
@@ -37,6 +40,7 @@ class HiveService {
     Hive.registerAdapter(DailyStatsAdapter());
     Hive.registerAdapter(AchievementAdapter());
     Hive.registerAdapter(PersonalRecordAdapter());
+    Hive.registerAdapter(StudyProgressAdapter());
 
     // 박스 열기
     await _openBoxes();
@@ -59,6 +63,8 @@ class HiveService {
     await Hive.openBox<Achievement>(_achievementsBox);
     await Hive.openBox<PersonalRecord>(_personalRecordsBox);
     await Hive.openBox(_temporaryDeleteBox); // String key-value 저장용
+    await Hive.openBox<StudyProgress>(_studyProgressBox);
+    await Hive.openBox(_generalBox); // 범용 key-value 저장용
   }
 
   /// 기본 데이터 초기화
@@ -96,6 +102,8 @@ class HiveService {
   Box<PersonalRecord> get personalRecordsBox =>
       Hive.box<PersonalRecord>(_personalRecordsBox);
   Box get temporaryDeleteBox => Hive.box(_temporaryDeleteBox);
+  Box<StudyProgress> get studyProgressBox => Hive.box<StudyProgress>(_studyProgressBox);
+  Box get generalBox => Hive.box(_generalBox);
 
   // =========================
   // VocabularyWord 관련 메서드

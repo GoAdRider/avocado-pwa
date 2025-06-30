@@ -9,6 +9,18 @@
     "return_to_home": "Return to Home",
     "continue_study": "Continue Study"
   },
+  "continue_study": {
+    "title": "Continue Study?",
+    "message": "You have a previous study session in progress.",
+    "already_exists_title": "Already in Recent Study Records",
+    "already_exists_message": "A study record with the same conditions exists. Would you like to continue?",
+    "progress": "Progress",
+    "last_study": "Last Study",
+    "shuffled": "Words are shuffled",
+    "cancel": "Cancel",
+    "start_over": "Start Over",
+    "continue": "Continue"
+  },
   "modes": {
     "card_study": "Card Study",
     "favorite_review": "Favorite Review",
