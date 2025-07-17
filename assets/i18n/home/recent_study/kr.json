@@ -1,6 +1,7 @@
 {
   "section": {
-    "title": "최근 학습 기록"
+    "title": "최근 학습 기록",
+    "max_records": "최대 10개까지만 보관"
   },
   "actions": {
     "select_clear": "선택 삭제",

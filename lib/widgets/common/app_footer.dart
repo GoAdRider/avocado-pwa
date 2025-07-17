@@ -45,38 +45,65 @@ class AppFooter extends StatelessWidget {
 
     if (screenWidth > 1024) {
       // 데스크톱: 전체 명언 표시
-      return Text(
-        '💡 "$quote" - $author 💡',
-        style: const TextStyle(
-          fontSize: 14,
-          fontStyle: FontStyle.italic,
-          color: Colors.grey,
-        ),
-        textAlign: TextAlign.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.lightbulb_outline, size: 16, color: Colors.grey),
+          const SizedBox(width: 4),
+          Text(
+            '"$quote" - $author',
+            style: const TextStyle(
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.lightbulb_outline, size: 16, color: Colors.grey),
+        ],
       );
     } else if (screenWidth > 768) {
       // 태블릿: 명언만 표시 (저자는 단축)
-      return Text(
-        '💡 "$quote" - $author 💡',
-        style: const TextStyle(
-          fontSize: 14,
-          fontStyle: FontStyle.italic,
-          color: Colors.grey,
-        ),
-        textAlign: TextAlign.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.lightbulb_outline, size: 16, color: Colors.grey),
+          const SizedBox(width: 4),
+          Text(
+            '"$quote" - $author',
+            style: const TextStyle(
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.lightbulb_outline, size: 16, color: Colors.grey),
+        ],
       );
     } else {
       // 모바일: 짧은 버전
       final shortQuote =
           quote.length > 30 ? '${quote.substring(0, 30)}...' : quote;
-      return Text(
-        '💡 "$shortQuote" 💡',
-        style: const TextStyle(
-          fontSize: 12,
-          fontStyle: FontStyle.italic,
-          color: Colors.grey,
-        ),
-        textAlign: TextAlign.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.lightbulb_outline, size: 14, color: Colors.grey),
+          const SizedBox(width: 4),
+          Text(
+            '"$shortQuote"',
+            style: const TextStyle(
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.lightbulb_outline, size: 14, color: Colors.grey),
+        ],
       );
     }
   }

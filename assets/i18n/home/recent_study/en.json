@@ -1,6 +1,7 @@
 {
   "section": {
-    "title": "Recent Study Records"
+    "title": "Recent Study Records",
+    "max_records": "Max 10 records kept"
   },
   "actions": {
     "select_clear": "Delete Selected",

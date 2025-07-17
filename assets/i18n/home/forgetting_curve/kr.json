@@ -3,7 +3,7 @@
     "title": "망각곡선 기반 복습"
   },
   "review_types": {
-    "smart_review": "스마트 복습",
+    "smart_review": "망각곡선 기반 복습",
     "urgent_review": "긴급 복습",
     "recommended_review": "추천 복습",
     "preview_review": "미리 복습",
@@ -27,6 +27,6 @@
     "recommended_review": "추천 복습",
     "leisure_review": "여유 복습",
     "forgetting_risk": "망각 위험",
-    "smart_review": "스마트 복습"
+    "smart_review": "망각곡선 기반 복습"
   }
 }

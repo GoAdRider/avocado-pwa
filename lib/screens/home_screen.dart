@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const SizedBox(height: 24),
             const StudyStatusSection(),
             const SizedBox(height: 24),
-            const SmartReviewSection(),
+            const ForgettingCurveReviewSection(),
             const SizedBox(height: 24),
             RecentStudySection(
               key: RecentStudySectionController.key,

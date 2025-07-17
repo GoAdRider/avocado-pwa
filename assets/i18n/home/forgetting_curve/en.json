@@ -3,7 +3,7 @@
     "title": "Forgetting Curve Based Review"
   },
   "review_types": {
-    "smart_review": "Smart Review",
+    "smart_review": "Forgetting Curve Review",
     "urgent_review": "Urgent Review",
     "recommended_review": "Recommended Review",
     "preview_review": "Preview Review",
@@ -27,6 +27,6 @@
     "recommended_review": "Recommended Review",
     "leisure_review": "Leisure Review",
     "forgetting_risk": "Forgetting Risk",
-    "smart_review": "Smart Review"
+    "smart_review": "Forgetting Curve Review"
   }
 }

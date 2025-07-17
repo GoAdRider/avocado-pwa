@@ -98,16 +98,27 @@ class SimpleI18n {
     }
   }
 
-  /// 문자열 조회 (초고속)
+  /// 문자열 조회 (초고속) with Fallback
   String tr(String key, {String namespace = 'common', Map<String, dynamic>? params}) {
     final cacheKey = '$_currentLanguage:$namespace:$key';
     String? cachedText = _cache[cacheKey];
     
     String text;
-    // 디버깅을 위한 로그
+    
     if (cachedText == null) {
-      print('❌ Missing translation: $cacheKey (available: ${_cache.keys.where((k) => k.startsWith('$_currentLanguage:$namespace:')).take(3).toList()})');
-      text = '[$namespace:$key]';
+      // Fallback 1: 다른 언어에서 찾기
+      final otherLang = _currentLanguage == 'kr' ? 'en' : 'kr';
+      final fallbackKey = '$otherLang:$namespace:$key';
+      cachedText = _cache[fallbackKey];
+      
+      if (cachedText == null) {
+        // Fallback 2: 하드코딩된 기본 값들
+        text = _getFallbackText(key, namespace);
+        print('❌ Using fallback for: $cacheKey -> $text');
+      } else {
+        text = cachedText;
+        print('⚠️ Using other language fallback: $cacheKey -> $text');
+      }
     } else {
       text = cachedText;
     }
@@ -120,6 +131,94 @@ class SimpleI18n {
     }
     
     return text;
+  }
+  
+  /// 하드코딩된 fallback 텍스트
+  String _getFallbackText(String key, String namespace) {
+    final isKr = _currentLanguage == 'kr';
+    
+    // 공통 번역들
+    if (namespace == 'common') {
+      switch (key) {
+        case 'main.title': return isKr ? 'Do a Vocabulary!' : 'Do a Vocabulary!';
+        case 'header.edit_toggle': return isKr ? '단축키' : 'Shortcuts';
+        case 'actions.start': return isKr ? '시작' : 'Start';
+        case 'dialog.ok': return isKr ? '확인' : 'OK';
+        case 'dialog.cancel': return isKr ? '취소' : 'Cancel';
+        case 'units.words': return isKr ? '개' : 'words';
+      }
+    }
+    
+    // 홈 화면 번역들
+    if (namespace == 'home/study_status') {
+      switch (key) {
+        case 'section.title': return isKr ? '학습 현황' : 'Study Status';
+        case 'stats.todays_goal': return isKr ? '오늘의 목표' : "Today's Goal";
+        case 'stats.detailed_stats': return isKr ? '상세 통계' : 'Detailed Stats';
+      }
+    }
+    
+    if (namespace == 'home/forgetting_curve') {
+      switch (key) {
+        case 'review_types.smart_review': return isKr ? '망각곡선 기반 복습' : 'Forgetting Curve Review';
+        case 'review_types.urgent_review': return isKr ? '긴급 복습' : 'Urgent Review';
+        case 'review_types.recommended_review': return isKr ? '추천 복습' : 'Recommended Review';
+        case 'review_types.preview_review': return isKr ? '미리 복습' : 'Preview Review';
+        case 'review_types.forgotten_review': return isKr ? '망각 복습' : 'Forgotten Review';
+      }
+    }
+    
+    if (namespace == 'home/recent_study') {
+      switch (key) {
+        case 'section.title': return isKr ? '최근 학습 기록' : 'Recent Study Records';
+        case 'section.max_records': return isKr ? '최대 10개까지만 보관' : 'Max 10 records kept';
+      }
+    }
+    
+    if (namespace == 'home/vocabulary_list') {
+      switch (key) {
+        case 'section.title': return isKr ? '어휘집 목록' : 'Vocabulary List';
+        case 'guide.total_words': return isKr ? '총 단어수' : 'Total Words';
+        case 'guide.favorites': return isKr ? '즐겨찾기' : 'Favorites';
+        case 'guide.wrong_words': return isKr ? '틀린단어' : 'Wrong Words';
+        case 'guide.wrong_count': return isKr ? '틀린횟수' : 'Wrong Count';
+        case 'guide.add_new_vocab': return isKr ? '새로운\n어휘집 추가하기' : 'Add New\nVocabulary';
+        case 'stats.calculating': return isKr ? '계산 중...' : 'Calculating...';
+      }
+    }
+    
+    if (namespace == 'home/filter') {
+      switch (key) {
+        case 'section.title': return isKr ? '필터' : 'Filter';
+        case 'stats.filtered_words': return isKr ? '필터링된 단어' : 'Filtered Words';
+        case 'ui.no_selection_guide': return isKr ? '어휘집을 먼저 선택해주세요' : 'Please select vocabulary first';
+        case 'ui.filter_select_vocab_first': return isKr ? '어휘집을 선택하면 필터를 사용할 수 있습니다' : 'Select vocabulary to use filters';
+      }
+    }
+    
+    // 추가 study_status fallback
+    if (namespace == 'home/study_status') {
+      switch (key) {
+        case 'section.study_mode': return isKr ? '위주 학습 설정' : 'Study Mode Setting';
+        case 'section.learning_method': return isKr ? '학습 방법' : 'Learning Method';
+        case 'study_mode.target_voca': return isKr ? 'TargetVoca 위주' : 'Target Vocabulary';
+        case 'study_mode.reference_voca': return isKr ? 'ReferenceVoca 위주' : 'Reference Vocabulary';
+        case 'study_mode.random_mode': return isKr ? 'Random 모드' : 'Random Mode';
+        case 'learning_method.card_study': return isKr ? '통합 단어카드 학습' : 'Integrated Card Study';
+        case 'learning_method.favorite_review': return isKr ? '즐겨찾기 복습' : 'Favorites Review';
+        case 'learning_method.game_study': return isKr ? '게임 학습' : 'Game Study';
+        case 'learning_method.wrong_word_study': return isKr ? '틀린단어 학습' : 'Wrong Words Study';
+        case 'stats.total_words': return isKr ? '총 단어수' : 'Total Words';
+        case 'stats.total_favorites': return isKr ? '총 즐겨찾기' : 'Total Favorites';
+        case 'stats.total_wrong_words': return isKr ? '총 틀린단어' : 'Total Wrong Words';
+        case 'stats.total_wrong_count': return isKr ? '총 틀린횟수' : 'Total Wrong Count';
+        case 'stats.average_accuracy': return isKr ? '평균 정답률' : 'Average Accuracy';
+        case 'stats.study_streak': return isKr ? '연속 학습' : 'Study Streak';
+      }
+    }
+    
+    // 기본 fallback
+    return '[$namespace:$key]';
   }
 }
 

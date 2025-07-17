@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../utils/i18n/simple_i18n.dart';
 
-class SmartReviewSection extends StatefulWidget {
-  const SmartReviewSection({super.key});
+class ForgettingCurveReviewSection extends StatefulWidget {
+  const ForgettingCurveReviewSection({super.key});
 
   @override
-  State<SmartReviewSection> createState() => _SmartReviewSectionState();
+  State<ForgettingCurveReviewSection> createState() => _ForgettingCurveReviewSectionState();
 }
 
-class _SmartReviewSectionState extends State<SmartReviewSection> {
+class _ForgettingCurveReviewSectionState extends State<ForgettingCurveReviewSection> {
   // 선택된 복습 타입을 추적하는 변수
   String _selectedReviewType = 'urgent'; // 기본값은 긴급 복습
 
