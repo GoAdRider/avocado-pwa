@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../utils/i18n/simple_i18n.dart';
+import '../../services/home/forgetting_curve/forgetting_curve_service.dart';
+import '../../services/common/vocabulary_service.dart';
+import '../../services/common/hive_service.dart';
+import '../../screens/study_screen.dart';
+import '../../models/vocabulary_word.dart';
 
 class ForgettingCurveReviewSection extends StatefulWidget {
   const ForgettingCurveReviewSection({super.key});
@@ -11,34 +16,48 @@ class ForgettingCurveReviewSection extends StatefulWidget {
 class _ForgettingCurveReviewSectionState extends State<ForgettingCurveReviewSection> {
   // 선택된 복습 타입을 추적하는 변수
   String _selectedReviewType = 'urgent'; // 기본값은 긴급 복습
+  
+  // 서비스 인스턴스들
+  final ForgettingCurveService _forgettingCurveService = ForgettingCurveService.instance;
+  final VocabularyService _vocabularyService = VocabularyService.instance;
+  final HiveService _hiveService = HiveService.instance;
 
-  // 복습 데이터 맵
-  Map<String, Map<String, String>> get _reviewData => {
-        'urgent': {
-          'emoji': 'priority_high',
-          'title': tr('review_types.urgent_review', namespace: 'home/forgetting_curve'),
-          'count': '7${tr('units.words')}',
-          'description': tr('descriptions.urgent_review', namespace: 'home/forgetting_curve'),
-        },
-        'recommended': {
-          'emoji': 'lightbulb',
-          'title': tr('review_types.recommended_review', namespace: 'home/forgetting_curve'),
-          'count': '12${tr('units.words')}',
-          'description': tr('descriptions.recommended_review', namespace: 'home/forgetting_curve'),
-        },
-        'preview': {
-          'emoji': 'preview',
-          'title': tr('review_types.preview_review', namespace: 'home/forgetting_curve'),
-          'count': '5${tr('units.words')}',
-          'description': tr('descriptions.preview_review', namespace: 'home/forgetting_curve'),
-        },
-        'forgotten': {
-          'emoji': 'warning',
-          'title': tr('review_types.forgotten_review', namespace: 'home/forgetting_curve'),
-          'count': '7${tr('units.words')}',
-          'description': tr('descriptions.forgotten_review', namespace: 'home/forgetting_curve'),
-        },
-      };
+  // 복습 데이터 맵 (실제 데이터 기반)
+  Map<String, Map<String, String>> get _reviewData {
+    // 모든 단어를 가져와서 복습 카운트 계산
+    final allWords = _hiveService.getVocabularyWords();
+    final urgentCount = _forgettingCurveService.getUrgentReviewCount(allWords);
+    final recommendedCount = _forgettingCurveService.getRecommendedReviewCount(allWords);
+    final previewCount = _forgettingCurveService.getPreviewReviewCount(allWords);
+    final forgettingRiskCount = _forgettingCurveService.getForgettingRiskCount(allWords);
+    
+    return {
+      'urgent': {
+        'emoji': 'priority_high',
+        'title': tr('review_types.urgent_review', namespace: 'home/forgetting_curve'),
+        'count': '$urgentCount${tr('units.words', namespace: 'common')}',
+        'description': tr('descriptions.urgent_review', namespace: 'home/forgetting_curve'),
+      },
+      'recommended': {
+        'emoji': 'lightbulb',
+        'title': tr('review_types.recommended_review', namespace: 'home/forgetting_curve'),
+        'count': '$recommendedCount${tr('units.words', namespace: 'common')}',
+        'description': tr('descriptions.recommended_review', namespace: 'home/forgetting_curve'),
+      },
+      'preview': {
+        'emoji': 'preview',
+        'title': tr('review_types.preview_review', namespace: 'home/forgetting_curve'),
+        'count': '$previewCount${tr('units.words', namespace: 'common')}',
+        'description': tr('descriptions.preview_review', namespace: 'home/forgetting_curve'),
+      },
+      'forgotten': {
+        'emoji': 'warning',
+        'title': tr('review_types.forgotten_review', namespace: 'home/forgetting_curve'),
+        'count': '$forgettingRiskCount${tr('units.words', namespace: 'common')}',
+        'description': tr('descriptions.forgotten_review', namespace: 'home/forgetting_curve'),
+      },
+    };
+  }
 
   // 아이콘 헬퍼 메서드
   Widget _getReviewIcon(String iconName, double size, Color color) {
@@ -240,31 +259,34 @@ class _ForgettingCurveReviewSectionState extends State<ForgettingCurveReviewSect
               ),
               const SizedBox(height: 20),
               // 시작 버튼
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: borderColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.play_arrow,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      tr('actions.start'),
-                      style: const TextStyle(
+              GestureDetector(
+                onTap: () => _startReview(reviewType),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.play_arrow,
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        size: 20,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        tr('actions.start'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -419,23 +441,92 @@ class _ForgettingCurveReviewSectionState extends State<ForgettingCurveReviewSect
 
   // 복습 버튼 탭 처리
   void _handleReviewTap(String reviewType) {
-    switch (reviewType) {
-      case 'urgent':
-        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
-        break;
-      case 'recommended':
-        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
-        break;
-      case 'preview':
-        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
-        break;
-      case 'forgotten':
-        _showComingSoonDialog(tr('status.game_feature_coming_soon'));
-        break;
-    }
+    _startReview(reviewType);
   }
 
-  // 준비 중 다이얼로그
+  // 복습 시작 메서드
+  void _startReview(String reviewType) {
+    // 모든 단어 가져오기
+    final allWords = _hiveService.getVocabularyWords();
+    
+    // 복습 타입에 따른 단어 필터링
+    List<VocabularyWord> reviewWords;
+    StudyMode studyMode;
+    
+    switch (reviewType) {
+      case 'urgent':
+        reviewWords = _forgettingCurveService.getWordsForReviewType(allWords, ReviewType.urgent);
+        studyMode = StudyMode.urgentReview;
+        break;
+      case 'recommended':
+        reviewWords = _forgettingCurveService.getWordsForReviewType(allWords, ReviewType.recommended);
+        studyMode = StudyMode.recommendedReview;
+        break;
+      case 'preview':
+        reviewWords = _forgettingCurveService.getWordsForReviewType(allWords, ReviewType.preview);
+        studyMode = StudyMode.leisureReview;
+        break;
+      case 'forgotten':
+        reviewWords = _forgettingCurveService.getWordsForReviewType(allWords, ReviewType.forgettingRisk);
+        studyMode = StudyMode.forgettingRisk;
+        break;
+      default:
+        reviewWords = [];
+        studyMode = StudyMode.cardStudy;
+    }
+    
+    // 복습할 단어가 없으면 알림
+    if (reviewWords.isEmpty) {
+      _showNoWordsDialog();
+      return;
+    }
+    
+    // 우선순위별로 정렬
+    final sortedWords = _forgettingCurveService.sortWordsByPriority(reviewWords);
+    
+    // 학습 화면으로 이동
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/study'),
+        builder: (context) => StudyScreen(
+          mode: studyMode,
+          words: sortedWords,
+          vocabularyFiles: [], // 복습에서는 빈 리스트
+          studyModePreference: 'TargetVoca',
+          posFilters: const [],
+          typeFilters: const [],
+        ),
+      ),
+    );
+  }
+
+  // 복습할 단어가 없을 때 다이얼로그
+  void _showNoWordsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.info, color: Colors.blue, size: 20),
+              const SizedBox(width: 8),
+              Text(tr('status.no_review_words', namespace: 'home/forgetting_curve')),
+            ],
+          ),
+          content: Text(tr('status.no_review_words', namespace: 'home/forgetting_curve')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(tr('dialog.ok', namespace: 'common')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 준비 중 다이얼로그 (필요시 사용)
   void _showComingSoonDialog(String message) {
     showDialog(
       context: context,

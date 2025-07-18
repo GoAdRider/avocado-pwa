@@ -448,9 +448,9 @@ class VocabularyListStats {
 
   /// 통계 요약 문자열 (UI 표시용)
   String get summaryText {
-    return '📝$totalWords${tr('units.words')} '
-        '⭐$favoriteWords${tr('units.words')} '
-        '❌$wrongWords${tr('units.words')} '
-        '🔢$wrongCount${tr('units.count')}';
+    return '📝$totalWords${tr('units.words', namespace: 'common')} '
+        '⭐$favoriteWords${tr('units.words', namespace: 'common')} '
+        '❌$wrongWords${tr('units.words', namespace: 'common')} '
+        '🔢$wrongCount${tr('units.count', namespace: 'common')}';
   }
 }

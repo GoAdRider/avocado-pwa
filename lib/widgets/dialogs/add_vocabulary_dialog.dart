@@ -126,7 +126,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
             e.stopPropagation();
 
             final dragEvent = e as web.DragEvent;
-            if ((dragEvent.dataTransfer?.types.length ?? 0) > 0) {
+            if (dragEvent.dataTransfer?.types != null) {
               setState(() => _isDragOver = true);
             }
           }.toJS);
@@ -139,7 +139,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
             e.stopPropagation();
 
             final dragEvent = e as web.DragEvent;
-            if ((dragEvent.dataTransfer?.types.length ?? 0) > 0) {
+            if (dragEvent.dataTransfer?.types != null) {
               dragEvent.dataTransfer?.dropEffect = 'copy';
               if (!_isDragOver) {
                 setState(() => _isDragOver = true);
@@ -304,8 +304,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded,
-                  color: Colors.orange, size: 24),
+              const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
               const SizedBox(width: 8),
               Text(tr('duplicates.title', namespace: 'dialogs/vocabulary_import')),
             ],
@@ -553,7 +552,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
             ),
             borderRadius: BorderRadius.circular(12),
             color: _isDragOver
-                ? const Color(0xFF6B8E23).withValues(alpha: 0.1)
+                ? const Color(0xFF6B8E23).withOpacity(0.1)
                 : Colors.grey[50],
           ),
           child: Column(
@@ -815,7 +814,7 @@ class _AddVocabularyDialogState extends State<AddVocabularyDialog> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${result.wordCount}${tr('units.words')}',
+                  '${result.wordCount}${tr('units.words', namespace: 'common')}',
                   style: TextStyle(fontSize: 11, color: Colors.blue[700]),
                 ),
               ),

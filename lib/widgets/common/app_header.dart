@@ -77,10 +77,21 @@ class AppHeader extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Image.asset(
-                  'assets/images/avocado-logo.png',
+                Container(
                   width: 42,
                   height: 42,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(21),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(21),
+                    child: Image.asset(
+                      'assets/images/avocado-logo.png',
+                      width: 42,
+                      height: 42,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 0),
                 const Text(
@@ -113,8 +124,7 @@ class AppHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.language,
-                      size: 16, color: Color(0xFF6B8E23)),
+                  const Icon(Icons.language, size: 16, color: Color(0xFF6B8E23)),
                   const SizedBox(width: 4),
                   Text(
                     isKoreanToEnglish ? 'KR' : 'EN',

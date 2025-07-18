@@ -10,10 +10,10 @@
     "forgotten_review": "Forgetting Risk"
   },
   "descriptions": {
-    "urgent_review": "Words that need immediate review",
-    "recommended_review": "Words good to review",
-    "preview_review": "Preview review words",
-    "forgotten_review": "Words at high risk of being forgotten"
+    "urgent_review": "Words that need review within 24 hours",
+    "recommended_review": "Words recommended for review within 2-7 days",
+    "preview_review": "Preview words scheduled for review after 7 days",
+    "forgotten_review": "Words at risk of being forgotten (14+ days since last review)"
   },
   "actions": {
     "start_review": "Start Review"

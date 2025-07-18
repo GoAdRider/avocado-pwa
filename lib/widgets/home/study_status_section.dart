@@ -113,31 +113,31 @@ class _StudyStatusSectionState extends State<StudyStatusSection> {
             Expanded(
                 child: _buildStatCard(
                     tr('stats.total_words', namespace: 'home/study_status'), 
-                    '${_formatNumber(_currentStats.totalWords)}${tr('units.words')}')),
+                    '${_formatNumber(_currentStats.totalWords)}${tr('units.words', namespace: 'common')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
                     tr('stats.total_favorites', namespace: 'home/study_status'), 
-                    '${_formatNumber(_currentStats.totalFavorites)}${tr('units.words')}')),
+                    '${_formatNumber(_currentStats.totalFavorites)}${tr('units.words', namespace: 'common')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
                     tr('stats.total_wrong_words', namespace: 'home/study_status'), 
-                    '${_currentStats.totalWrongWords}${tr('units.words')}')),
+                    '${_currentStats.totalWrongWords}${tr('units.words', namespace: 'common')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
                     tr('stats.total_wrong_count', namespace: 'home/study_status'), 
-                    '${_currentStats.totalWrongCount}${tr('units.count')}')),
+                    '${_currentStats.totalWrongCount}${tr('units.count', namespace: 'common')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(tr('stats.average_accuracy', namespace: 'home/study_status'),
-                    '${_currentStats.averageAccuracy.toStringAsFixed(1)}${tr('units.percent')}')),
+                    '${_currentStats.averageAccuracy.toStringAsFixed(1)}${tr('units.percent', namespace: 'common')}')),
             const SizedBox(width: 8),
             Expanded(
                 child: _buildStatCard(
                     tr('stats.study_streak', namespace: 'home/study_status'), 
-                    '${_currentStats.studyStreak}${tr('units.days')}')),
+                    '${_currentStats.studyStreak}${tr('units.days', namespace: 'common')}')),
           ],
         ),
       ],
